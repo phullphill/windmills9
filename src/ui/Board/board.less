@@ -1,0 +1,47 @@
+
+@SQUARE_SIZE: 50px;
+@VANE_COLOUR: black;
+@ALT_VANE_COLOUR: white;
+
+.vane-wrapper {
+	width: @SQUARE_SIZE;
+	height: @SQUARE_SIZE;
+	position: absolute;
+	border: 1px dotted #ddd;
+
+	&.is-active {
+		border-color: red;
+	}
+
+	&.rotatable {
+		cursor: pointer;
+	}
+
+	.vane {
+		width: 0px;
+		height: 0px;
+		border-width: @SQUARE_SIZE/2;
+		border-style: solid;
+		border-color: @ALT_VANE_COLOUR;
+
+		&.north-east {
+			border-top-color: @VANE_COLOUR;
+			border-right-color: @VANE_COLOUR;
+		}
+
+		&.south-east {
+			border-right-color: @VANE_COLOUR;
+			border-bottom-color: @VANE_COLOUR;
+		}
+
+		&.south-west {
+			border-bottom-color: @VANE_COLOUR;
+			border-left-color: @VANE_COLOUR;
+		}
+
+		&.north-west {
+			border-left-color: @VANE_COLOUR;
+			border-top-color: @VANE_COLOUR;
+		}
+	}
+}

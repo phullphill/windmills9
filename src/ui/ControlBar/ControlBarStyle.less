@@ -1,0 +1,123 @@
+
+@SQUARE_SIZE: 50px;
+
+.control-bar {
+	height: (@SQUARE_SIZE * 2.5);
+	width: (@SQUARE_SIZE * 8);
+	background-color: #D1D1D1;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-evenly;
+
+	.separator {
+		height: (@SQUARE_SIZE * 2);
+		width: 0;
+		border: 1px solid black;
+		margin: (@SQUARE_SIZE * 0.25) 5px;
+	}
+
+	.wind-status {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-evenly;
+		padding: 0 5px;
+		align-items: center;
+
+		.wind-force {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+
+			.wind-icon {
+				width: 25px;
+				height: 25px;
+				padding: 0 5px;
+			}
+
+			.wind-magnitude {
+				width: 25px;
+				font-size: 1.5em;
+				font-weight: 600;
+				text-align: center;
+			}
+		}
+
+		.wind-direction {
+			font-weight: 600;
+		}
+
+	}
+
+	.player-scores {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-evenly;
+		padding: 0 5px;
+
+		.player-and-score {
+			display: flex;
+			flex-direction: row;
+			position: relative;
+
+			.player-identity-and-mills {
+				display: flex;
+				flex-direction: column;
+
+				.player-identity {
+					display: flex;
+					flex-direction: row;
+					width: 100px;
+
+					.miller {
+						width: (@SQUARE_SIZE * 0.3);
+						height: (@SQUARE_SIZE * 0.3);
+						border-radius: 50%;
+					}
+
+					.player-name {
+						padding: 0 5px;
+					}
+				}
+
+				.player-mills {
+					display: flex;
+					flex-direction: row;
+					position: relative;
+
+					.player-mill-count {
+						position: absolute;
+						bottom: -5px;
+						left: 25px;
+						font-size: 1.7em;
+					}
+				}
+			}
+
+			.player-score {
+				display: flex;
+				flex: 1;
+				font-size: 2.7em;
+				position: absolute;
+				right: -5px;
+				bottom: -5px;
+			}
+		}
+	}
+
+	.compass-rose {
+		height: (@SQUARE_SIZE * 2);
+		width: (@SQUARE_SIZE * 2);
+		margin: 10px;
+	}
+
+	.rotate-buttons {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-evenly;
+
+		.rotate-button {
+			height: @SQUARE_SIZE;
+			width: @SQUARE_SIZE;
+		}
+	}
+}
