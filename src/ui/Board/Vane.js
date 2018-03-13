@@ -4,23 +4,15 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { COMPASS, SQUARE_SIZE } from 'common';
-import { boardActions, boardSelectors } from 'board';
+import { gameActions, gameSelectors } from 'game';
 
 function mapStateToProps(state) {
 	return {
-		activeVaneId: boardSelectors.activeVaneId(state),
+		activeVaneId: gameSelectors.player.activeVaneId(state, gameSelectors.players.activeId(state)),
 	};
 }
 
-function mapDispatchToProps(dispatch) {
-	return {
-		actions: {
-			selectVane: (vaneId) => dispatch(boardActions.selectVane(vaneId)),
-		},
-	};
-}
-
-export const Vane = connect(mapStateToProps, mapDispatchToProps)(class Vane extends PureComponent {
+export const Vane = connect(mapStateToProps)(class Vane extends PureComponent {
 
 	static defaultProps = {
 		activeVaneId: null,
@@ -30,16 +22,9 @@ export const Vane = connect(mapStateToProps, mapDispatchToProps)(class Vane exte
 		vane: PropTypes.shape({}).isRequired,
 		colIndex: PropTypes.number.isRequired,
 		activeVaneId: PropTypes.string,
-		actions: PropTypes.shape({}).isRequired,
 	}
 
 	canBeRotated = () => true
-
-	handleClick = () => {
-		const { vane, actions } = this.props;
-		console.log('handleClick on vane ', vane.id);
-		actions.selectVane(vane.id);
-	}
 
 	renderWrapperClasses = () => {
 		const { vane, activeVaneId } = this.props;
@@ -79,8 +64,6 @@ export const Vane = connect(mapStateToProps, mapDispatchToProps)(class Vane exte
 				id={vane.id}
 				className={this.renderWrapperClasses()}
 				style={this.renderWrapperStyle()}
-				onClick={this.handleClick}
-				onKeyPress={this.handleClick}
 			>
 				<div className={this.renderVaneClasses()} />
 			</div>

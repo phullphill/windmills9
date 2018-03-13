@@ -8,6 +8,7 @@ export class CompassEnum extends CircularEnum {
 	get quarters() { return [this.NORTHWEST, this.NORTHEAST, this.SOUTHEAST, this.SOUTHWEST]; }
 
 	before2(sym) { return this.before(this.before(sym)); }
+
 	after2(sym) { return this.after(this.after(sym)); }
 
 	randomCardinal() {

@@ -4,7 +4,6 @@ import { SPIN } from 'common';
 export const MillRecord = Immutable.Record({
 	id: '',
 	position: null,
-	direction: null,
 	vaneIds: {},
 	spin: null,
 });

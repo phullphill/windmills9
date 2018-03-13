@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 import { SQUARE_SIZE } from 'common';
-import { boardSelectors } from 'board';
-import { playerSelectors } from 'players';
+import { gameSelectors } from 'game';
 
 import { Board } from '../Board';
 import { Millers } from '../Millers';
@@ -13,31 +12,19 @@ import { ControlBar } from '../ControlBar';
 import './Game.less';
 
 function mapStateToProps(state) {
-	const activePlayer = playerSelectors.players.active(state);
 	return {
-		board: boardSelectors.board(state),
-		players: playerSelectors.players.all(state),
-		activePlayerId: playerSelectors.players.activeId(state),
-		activePlayerColour: activePlayer ? activePlayer.colour : '',
-		activeMiller: playerSelectors.player.activeMiller(state, playerSelectors.players.activeId(state)),
-		activeVane: boardSelectors.activeVane(state),
+		board: gameSelectors.board.board(state),
+		players: gameSelectors.players.all(state),
+		activePlayerId: gameSelectors.players.activeId(state),
 	};
 }
 
 export const Game = connect(mapStateToProps)(class Game extends PureComponent {
 
-	static defaultProps = {
-		activeMiller: null,
-		activeVane: null,
-	};
-
 	static propTypes = {
 		board: PropTypes.shape({}).isRequired,
 		players: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 		activePlayerId: PropTypes.string.isRequired,
-		activePlayerColour: PropTypes.string.isRequired,
-		activeMiller: PropTypes.shape({}),
-		activeVane: PropTypes.shape({}),
 	};
 
 	constructor(props) {
@@ -89,19 +76,9 @@ export const Game = connect(mapStateToProps)(class Game extends PureComponent {
 		);
 	}
 
-	renderControlBar = () => {
-		const { board, players, activePlayerId, activePlayerColour, activeMiller, activeVane } = this.props;
-		return (
-			<ControlBar
-				board={board}
-				players={players}
-				activePlayerId={activePlayerId}
-				activePlayerColour={activePlayerColour}
-				activeMiller={activeMiller}
-				activeVane={activeVane}
-			/>
-		);
-	}
+	renderControlBar = () => (
+		<ControlBar />
+	);
 
 	render() {
 		const { hasError } = this.state;

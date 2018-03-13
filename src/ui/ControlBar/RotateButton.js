@@ -24,7 +24,7 @@ export class RotateButton extends PureComponent {
 		const { spin, activeVane } = this.props;
 		const id = spin === SPIN.CLOCKWISE ? 'btn-cw' : 'btn-acw';
 		const name = spin === SPIN.CLOCKWISE ? 'fa-redo-alt' : 'fa-undo-alt';
-		const iconSize = SQUARE_SIZE * 0.75;
+		const iconSize = SQUARE_SIZE * 0.6;
 		return (
 			<Icon
 				id={id}
@@ -36,10 +36,28 @@ export class RotateButton extends PureComponent {
 		);
 	}
 
-	renderMiniVane = (direction, colour) => {
+	renderMiniVane = (size, direction, colour, transform) => {
+		const pointsMap = {
+			[COMPASS.NORTHWEST]: `0,0 ${size},0 0,${size}`,
+			[COMPASS.NORTHEAST]: `${size},0 ${size},${size} 0,0`,
+			[COMPASS.SOUTHEAST]: `${size},${size} 0,${size} ${size},0`,
+			[COMPASS.SOUTHWEST]: `0,${size} 0,0 ${size},${size}`,
+		};
+		const points = pointsMap[direction];
+		return (
+			<polygon points={points} fill={colour} transform={transform} />
+		);
+	}
+
+	renderRightArrow = (transform) => {
 		const size = SQUARE_SIZE * 0.2;
 		return (
-			<polygon points={`0,0 0,${size} ${size},0`} fill={colour} />
+			<path
+				d={`M${size * 0.1} ${size * 0.5} h${size * 0.8} l${size * -0.25} ${size * -0.25} m${size * 0.25} ${size * 0.25} l${size * -0.25} ${size * 0.25} `}
+				fill="transparent"
+				stroke="black"
+				transform={transform}
+			/>
 		);
 	}
 
@@ -52,11 +70,13 @@ export class RotateButton extends PureComponent {
 		if (activePlayerColour === 'white') {
 			directionNow = COMPASS.opposite(directionNow);
 		}
-		const directionAfterRotate = spin === SPIN.CLOCKWISE ? COMPASS.after(directionNow) : COMPASS.before(directionNow);
+		const directionAfterRotate = spin === SPIN.CLOCKWISE ? COMPASS.after2(directionNow) : COMPASS.before2(directionNow);
+		const size = SQUARE_SIZE * 0.2;
 		return (
-			<svg width="30" height="10" viewBox="0,0 30,10" >
-				{this.renderMiniVane(directionNow, activePlayerColour)}
-				{this.renderMiniVane(directionAfterRotate, activePlayerColour)}
+			<svg width={`${size * 3}`} height={`${size}`} viewBox={`0,0 ${size * 3},${size}`} >
+				{this.renderMiniVane(size, directionNow, activePlayerColour)}
+				{this.renderRightArrow(`translate(${size * 1},0)`)}
+				{this.renderMiniVane(size, directionAfterRotate, activePlayerColour, `translate(${size * 2},0)`)}
 			</svg>
 		);
 	}

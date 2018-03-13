@@ -38,7 +38,6 @@ function rotateVane(state, vaneId, spinDirection) {
 				const spin = determineMillSpin(millVaneIds, state.getIn(['board', 'vanes']));
 				mutatableState = mutatableState.setIn(['board', 'mills', id, 'spin'], spin);
 			});
-			// return mutatableState.setIn(['activePlayerId'], nextPlayer(mutatableState));
 		});
 }
 
@@ -50,7 +49,7 @@ export const boardStore = (state = initialState(), action = {}) => {
 			return selectVane(state, payload);
 
 		case boardActions.rotateVane.type:
-			return rotateVane(state, payload.vaneId, payload.direction);
+			return rotateVane(state, payload.vaneId, payload.spinDirection);
 
 		default:
 			return state;

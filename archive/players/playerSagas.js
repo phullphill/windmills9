@@ -1,14 +1,14 @@
 import { select, put } from 'redux-saga/effects';
 import { registerTakeEverySaga, COMPASS } from 'common';
-import { boardSelectors } from 'board';
+import { gameSelectors } from 'board';
 import { playerActions } from './playerActions';
-import { playerSelectors } from './playerSelectors';
+import { gameSelectors } from './gameSelectors';
 
 export function* nextPlayerHandler(action) {
 
 	const state = yield select();
-	const allPlayers = playerSelectors.players.all(state);
-	const activePlayer = playerSelectors.players.active(state);
+	const allPlayers = gameSelectors.players.all(state);
+	const activePlayer = gameSelectors.players.active(state);
 
 	const activePlayerIndex = allPlayers.findIndex((player) => player.id === activePlayer.id);
 	const nextPlayerIndex = (activePlayerIndex + 1) % allPlayers.length;
@@ -22,9 +22,9 @@ export function* nextPlayerHandler(action) {
 	// determine strategy - which mill to target
 
 	// figure out which miller to move
-	let activeMiller = playerSelectors.player.activeMiller(state, nextPlayer.id);
+	let activeMiller = gameSelectors.player.activeMiller(state, nextPlayer.id);
 	if (!activeMiller) {
-		const allMillers = playerSelectors.player.millers(state, nextPlayer.id);
+		const allMillers = gameSelectors.player.millers(state, nextPlayer.id);
 		activeMiller = allMillers.first();
 	}
 
@@ -32,7 +32,7 @@ export function* nextPlayerHandler(action) {
 	yield put(playerActions.setActiveMiller({ playerId: nextPlayer.id, millerId: activeMiller.id }));
 
 	// decide where to move it to
-	const board = boardSelectors.board(state);
+	const board = gameSelectors.board(state);
 	const toDirection = COMPASS.NORTH;
 	const toPosition = board.nextPositionFrom(activeMiller.position, toDirection);
 

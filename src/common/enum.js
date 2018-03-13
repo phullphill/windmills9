@@ -14,7 +14,7 @@ export class Enum {
 	}
 
 	get symbols() {
-		return this.keys.map(key => this[key]);
+		return this.keys.map((key) => this[key]);
 	}
 
 	get count() {
@@ -22,7 +22,7 @@ export class Enum {
 	}
 
 	indexOf(sym) {
-		return this.keys.findIndex(key => this[key] === sym);
+		return this.keys.findIndex((key) => this[key] === sym);
 	}
 
 	keyOf(sym) {
@@ -87,7 +87,7 @@ export class CircularEnum extends SequentialEnum {
 		const thisIndex = this.indexOf(sym);
 		let prevIndex = thisIndex - 1;
 		if (prevIndex === -1) {
-			prevIndex = 3;
+			prevIndex = this.count - 1;
 		}
 		return this[this.keys[prevIndex]];
 	}

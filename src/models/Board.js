@@ -1,8 +1,6 @@
 import Immutable from 'immutable';
-import {
-	COMPASS,
-	determineMillSpin,
-} from 'common';
+import { COMPASS, transformObject } from 'common';
+import { determineMillSpin } from 'game';
 import { Mill } from './Mill';
 import { Position } from './Position';
 import { Vane } from './Vane';
@@ -59,7 +57,8 @@ function createMills(width, height, vanes) {
 			const position = new Position(x, y);
 			const id = generateId(position);
 			const vaneIds = millVaneIds(position, width, height);
-			const spin = determineMillSpin(vaneIds, vanes);
+			const millVanes = transformObject(vaneIds, COMPASS.quarters, (vaneId) => vanes.get(vaneId));
+			const spin = determineMillSpin(millVanes);
 			mills[id] = new Mill({ id, position, vaneIds, spin });
 		}
 	}

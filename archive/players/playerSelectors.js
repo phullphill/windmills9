@@ -1,10 +1,10 @@
-import { boardSelectors } from 'board';
+import { gameSelectors } from 'board';
 
 const activePlayerIdSelector = (state) => state.players.activePlayerId;
 const playerByIdSelector = (state, playerId) => state.players.getIn(['players', playerId]);
 const millerByIdSelector = (state, playerId, millerId) => state.players.getIn(['players', playerId, 'millers', millerId]);
 
-export const playerSelectors = {
+export const gameSelectors = {
 
 	players: {
 		all: (state) => state.players.players.toArray(),
@@ -17,7 +17,7 @@ export const playerSelectors = {
 		millers: (state, playerId) => playerByIdSelector(state, playerId).millers,
 		activeMillerId: (state, playerId) => playerByIdSelector(state, playerId).activeMillerId,
 		activeMiller: (state, playerId) => {
-			const activeMillerId = playerSelectors.player.activeMillerId(state, playerId);
+			const activeMillerId = gameSelectors.player.activeMillerId(state, playerId);
 			if (!activeMillerId) {
 				return null;
 			}
@@ -30,8 +30,8 @@ export const playerSelectors = {
 		byId: (state, playerId, millerId) => millerByIdSelector(state, playerId, millerId),
 		position: (state, playerId, millerId) => millerByIdSelector(state, playerId, millerId).position,
 		nextPosition: (state, playerId, millerId, toDirection) => {
-			const board = boardSelectors.board(state);
-			const currentPosition = playerSelectors.miller.position(state, playerId, millerId);
+			const board = gameSelectors.board(state);
+			const currentPosition = gameSelectors.miller.position(state, playerId, millerId);
 			return board.nextPositionFrom(currentPosition, toDirection);
 		},
 	},

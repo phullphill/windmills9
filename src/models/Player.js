@@ -8,13 +8,14 @@ export const PlayerRecord = Immutable.Record({
 	millers: null,
 	millCount: 0,
 	activeMillerId: null,
+	activeVaneId: null,
 	isAI: false,
 });
 
 export class Player extends PlayerRecord {
 
 	constructor({ id, name, colour, millerColour, millers, isAI }) {
-		super({ id, name, colour, millerColour, millers, isAI, activeMillerId: null });
+		super({ id, name, colour, millerColour, millers, isAI, activeMillerId: null, activeVaneId: null });
 	}
 
 	get points() {

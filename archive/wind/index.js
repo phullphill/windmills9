@@ -1,3 +1,3 @@
 export * from './windActions';
-export * from './windSelectors';
+export * from './gameSelectors';
 export * from './windStore';

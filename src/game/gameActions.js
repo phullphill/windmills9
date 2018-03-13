@@ -1,0 +1,48 @@
+import { createStoreAction, createSagaActions } from 'common';
+
+export const gameActions = {
+
+	/**
+	 * Rotate a vane one step clockwise or anti-cockwise.
+	 * Must have a miller at each corner, and each miller moves also.
+	 * @param {object} payload
+	 * @param {object} payload.vaneId - vane being rotated
+	 * @param {spinDirection} payload.spin - direction to rotate - clockwise or anti-clockwise
+	 */
+	rotateVane: createStoreAction('ROTATE_VANE'),
+
+	/**
+	 * Next active players
+	 */
+	nextPlayer: createSagaActions('NEXT_PLAYER'),
+
+	/**
+	 * Set active player
+	 * @param {object} payload
+	 * @param {object} payload.playerId - player whose turn it is next
+	 */
+	setActivePlayer: createStoreAction('SET_ACTIVE_PLAYER'),
+
+	/**
+	 * Set the active miller for a player
+	 * @param {object} payload
+	 * @param {object} payload.playerId - player doing the selecting
+	 * @param {object} payload.millerId - miller being selected
+	 */
+	setActiveMiller: createStoreAction('SET_ACTIVE_MILLER'),
+
+	/**
+	 * Move a miller to a new position
+	 * @param {object} payload
+	 * @param {string} payload.playerId - player whose miller we want to move
+	 * @param {string} payload.millerId - miller we want to move
+	 * @param {position} payload.toPosition - position to move the active miller to
+	 */
+	moveMiller: createStoreAction('MOVE_MILLER'),
+
+	/**
+	 * Change the wind randomly
+	 */
+	randomWindChange: createStoreAction('RANDOM_WIND_CHANGE'),
+
+};

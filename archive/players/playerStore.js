@@ -34,6 +34,9 @@ function setActiveMiller(state, { playerId, millerId }) {
 
 function moveMiller(state, { playerId, millerId, toPosition }) {
 	return state.setIn(['players', playerId, 'millers', millerId, 'position'], toPosition);
+	// .withMutations((mutatableState) => {
+	// 	mutatableState = mutatableState.setIn(['board', 'vanes', vaneId, 'isRotatable'], true);
+	// });
 }
 
 export const playerStore = (state = initialState(), action = {}) => {

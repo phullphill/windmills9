@@ -4,12 +4,12 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { SQUARE_SIZE } from 'common';
 import { Position } from 'models';
-import { playerActions } from 'players';
+import { gameActions } from 'game';
 
 function mapDispathToProps(dispatch) {
 	return {
 		actions: {
-			setActiveMiller: (playerId, millerId) => dispatch(playerActions.setActiveMiller({ playerId, millerId })),
+			setActiveMiller: (playerId, millerId) => dispatch(gameActions.setActiveMiller({ playerId, millerId })),
 		},
 	};
 }
@@ -66,6 +66,7 @@ export const Miller = connect(null, mapDispathToProps)(class Miller extends Pure
 			transition: 'all 0.25s',
 			transitionTimingFunction: 'linear',
 			pointerEvents: 'auto',
+			zIndex: '2',
 		};
 	}
 

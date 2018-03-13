@@ -3,19 +3,21 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 import { SQUARE_SIZE, COMPASS } from 'common';
-import { windSelectors } from 'wind';
+import { gameSelectors } from 'game';
 import { Icon } from 'ui';
 
 function mapStateToProps(state) {
 	return {
-		wind: windSelectors.wind(state),
+		direction: gameSelectors.wind.direction(state),
+		force: gameSelectors.wind.force(state),
 	};
 }
 
 export const WindStatus = connect(mapStateToProps)(class WindStatus extends PureComponent {
 
 	static propTypes = {
-		wind: PropTypes.shape({}).isRequired,
+		direction: PropTypes.symbol.isRequired,
+		force: PropTypes.number.isRequired,
 	};
 
 	renderWindIcon = () => (
@@ -33,8 +35,8 @@ export const WindStatus = connect(mapStateToProps)(class WindStatus extends Pure
 	);
 
 	renderWindForce = () => {
-		const { wind } = this.props;
-		return (wind.magnitude);
+		const { force } = this.props;
+		return (force);
 	}
 
 	renderWindArrow = () => {
@@ -50,7 +52,7 @@ export const WindStatus = connect(mapStateToProps)(class WindStatus extends Pure
 	}
 
 	renderWindNESW = () => {
-		const { wind } = this.props;
+		const { direction } = this.props;
 		const directionAbbreviations = {
 			[COMPASS.NORTH]: 'N',
 			[COMPASS.NORTHEAST]: 'NE',
@@ -62,7 +64,7 @@ export const WindStatus = connect(mapStateToProps)(class WindStatus extends Pure
 			[COMPASS.NORTHWEST]: 'NW',
 		};
 		return (
-			<span>{directionAbbreviations[wind.direction]}</span>
+			<span>{directionAbbreviations[direction]}</span>
 		);
 	}
 
@@ -71,7 +73,7 @@ export const WindStatus = connect(mapStateToProps)(class WindStatus extends Pure
 			<div className="wind-status" >
 				<div className="wind-force" >
 					<div className="wind-icon" >{this.renderWindIcon()}</div>
-					<div className="wind-magnitude" >{this.renderWindForce()}</div>
+					<div className="wind-force" >{this.renderWindForce()}</div>
 				</div>
 				<div className="wind-direction" >
 					<div className="wind-arrow" >{this.renderWindArrow()}</div>

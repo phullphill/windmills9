@@ -1,5 +1,5 @@
 
-export const windSelectors = {
+export const gameSelectors = {
 
 	wind: (state) => state.wind.wind,
 	direction: (state) => state.wind.getIn(['wind', 'direction']),

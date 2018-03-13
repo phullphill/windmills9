@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import classNames from 'classnames';
 
 import { COMPASS, SPIN } from 'common';
-import { playerActions } from 'players';
+import { gameActions, gameSelectors } from 'game';
 
 import { WindStatus } from './WindStatus';
 import { PlayerScores } from './PlayerScores';
@@ -13,16 +13,29 @@ import { RotateButton } from './RotateButton';
 
 import './ControlBarStyle.less';
 
-function mapDispathToProps(dispatch) {
+function mapStateToProps(state) {
+	const activePlayer = gameSelectors.players.active(state);
+	return {
+		board: gameSelectors.board.board(state),
+		players: gameSelectors.players.all(state),
+		activePlayerId: gameSelectors.players.activeId(state),
+		activePlayerColour: activePlayer ? activePlayer.colour : '',
+		activeMiller: gameSelectors.player.activeMiller(state, gameSelectors.players.activeId(state)),
+		activeVane: gameSelectors.player.activeVane(state, gameSelectors.players.activeId(state)),
+	};
+}
+
+function mapDispatchToProps(dispatch) {
 	return {
 		actions: {
-			moveMiller: (playerId, millerId, toPosition) => dispatch(playerActions.moveMiller({ playerId, millerId, toPosition })),
-			nextPlayer: () => dispatch(playerActions.nextPlayer.request()),
+			moveMiller: (playerId, millerId, toPosition) => dispatch(gameActions.moveMiller({ playerId, millerId, toPosition })),
+			rotateVane: (playerId, vaneId, spinDirection) => dispatch(gameActions.rotateVane({ playerId, vaneId, spinDirection })),
+			nextPlayer: () => dispatch(gameActions.nextPlayer.request()),
 		},
 	};
 }
 
-export const ControlBar = connect(null, mapDispathToProps)(class ControlBar extends PureComponent {
+export const ControlBar = connect(mapStateToProps, mapDispatchToProps)(class ControlBar extends PureComponent {
 
 	static defaultProps = {
 		activeMiller: null,
@@ -98,7 +111,9 @@ export const ControlBar = connect(null, mapDispathToProps)(class ControlBar exte
 	}
 
 	handleRotate = (spin) => {
-		console.log(`handling rotate ${SPIN.keyOf(spin)}`);
+		const { activePlayerId, actions, activeVane } = this.props;
+		actions.rotateVane(activePlayerId, activeVane.id, spin);
+		actions.nextPlayer();
 	}
 
 	renderBarClass = () => classNames('control-bar');
@@ -118,7 +133,7 @@ export const ControlBar = connect(null, mapDispathToProps)(class ControlBar exte
 				<PlayerScores players={players} activePlayerId={activePlayerId} />
 				<div className="separator" />
 				<CompassRose disabledDirections={disabledDirections} onSelect={this.handleSelectDirection} />
-				<div className="rotate-buttons">
+				<div className="rotate-buttons" >
 					<RotateButton spin={SPIN.CLOCKWISE} onSelect={this.handleRotate} activePlayerColour={activePlayerColour} activeVane={activeVane} />
 					<RotateButton spin={SPIN.ANTICLOCKWISE} onSelect={this.handleRotate} activePlayerColour={activePlayerColour} activeVane={activeVane} />
 				</div>

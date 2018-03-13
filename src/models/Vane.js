@@ -5,7 +5,7 @@ export const VaneRecord = Immutable.Record({
 	id: '',
 	position: null,
 	direction: null,
-	millIds: [],
+	millIds: {},
 });
 
 export class Vane extends VaneRecord {
@@ -24,36 +24,6 @@ export class Vane extends VaneRecord {
 
 	isOneOf(otherVanes) {
 		return otherVanes.some((v) => this.isSameAs(v));
-	}
-
-	isOpenTo(direction) {
-		switch (direction) {
-			case COMPASS.NORTH:
-				return this.direction === COMPASS.SOUTHEAST || this.direction === COMPASS.SOUTHWEST;
-			case COMPASS.EAST:
-				return this.direction === COMPASS.SOUTHWEST || this.direction === COMPASS.NORTHWEST;
-			case COMPASS.SOUTH:
-				return this.direction === COMPASS.NORTHWEST || this.direction === COMPASS.NORTHEAST;
-			case COMPASS.WEST:
-				return this.direction === COMPASS.NORTHEAST || this.direction === COMPASS.SOUTHEAST;
-			default:
-				return false;
-		}
-	}
-
-	pointsTo(direction) {
-		switch (direction) {
-			case COMPASS.NORTH:
-				return this.direction === COMPASS.NORTHEAST || this.direction === COMPASS.NORTHWEST;
-			case COMPASS.EAST:
-				return this.direction === COMPASS.SOUTHEAST || this.direction === COMPASS.NORTHEAST;
-			case COMPASS.SOUTH:
-				return this.direction === COMPASS.SOUTHWEST || this.direction === COMPASS.SOUTHEAST;
-			case COMPASS.WEST:
-				return this.direction === COMPASS.NORTHWEST || this.direction === COMPASS.SOUTHWEST;
-			default:
-				return false;
-		}
 	}
 
 	isInOperatingMill(mills) {
