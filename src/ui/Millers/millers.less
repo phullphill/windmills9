@@ -1,0 +1,38 @@
+@SQUARE_SIZE: 50px;
+@MILLER_SIZE: @SQUARE_SIZE * 0.3;
+
+.millers-wrapper {
+	position: relative;
+	height: inherit;
+	width: inherit;
+	overflow: hidden;
+	pointer-events: none;
+
+	.miller {
+
+		.miller-marker {
+			width: @MILLER_SIZE;
+			height: @MILLER_SIZE;
+			border-radius: 50%;
+			border: 0;
+			cursor: auto;
+			transition: all 0.25s;
+			transition-timing-function: linear;
+			pointer-events: auto;
+			z-index: 2;
+			position: absolute;
+
+			&.is-selected {
+				border: 2px solid red;
+			}
+
+			&.is-active-player {
+				cursor: pointer;
+			}
+
+			&.is-milling {
+				background-color: red;
+			}
+		}
+	}
+}

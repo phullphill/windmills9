@@ -2,11 +2,18 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import classNames from 'classnames';
 import { SQUARE_SIZE } from 'common';
 import { Position } from 'models';
-import { gameActions } from 'game';
+import { gameActions, gameSelectors } from 'game';
 
-function mapDispathToProps(dispatch) {
+function mapStateToProps(state, ownProps) {
+	return {
+		mill: gameSelectors.mill.at(state, ownProps.miller.position),
+	};
+}
+
+function mapDispatchToProps(dispatch) {
 	return {
 		actions: {
 			setActiveMiller: (playerId, millerId) => dispatch(gameActions.setActiveMiller({ playerId, millerId })),
@@ -14,13 +21,14 @@ function mapDispathToProps(dispatch) {
 	};
 }
 
-export const Miller = connect(null, mapDispathToProps)(class Miller extends PureComponent {
+export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller extends PureComponent {
 
 	static propTypes = {
 		board: PropTypes.shape({}).isRequired,
 		player: PropTypes.shape({}).isRequired,
 		isActivePlayer: PropTypes.bool.isRequired,
 		miller: PropTypes.shape({}).isRequired,
+		mill: PropTypes.shape({}).isRequired,
 		actions: PropTypes.shape({}).isRequired,
 	};
 
@@ -48,25 +56,27 @@ export const Miller = connect(null, mapDispathToProps)(class Miller extends Pure
 		return positions;
 	}
 
+	renderMillerClasses = () => {
+		const { player, isActivePlayer, miller, mill } = this.props;
+		const isSelected = (miller.id === player.activeMillerId);
+		return classNames(
+			'miller-marker',
+			{
+				'is-active-player': isActivePlayer,
+				'is-selected': isSelected,
+				'is-milling': mill.isSpinning(),
+			}
+		);
+	}
+
 	renderMillerStyle = (position) => {
-		const { player, isActivePlayer, miller } = this.props;
+		const { player } = this.props;
 		const { x, y } = position;
 		const size = SQUARE_SIZE * 0.3;
-		const isSelected = (miller.id === player.activeMillerId);
 		return {
-			width: `${size}px`,
-			height: `${size}px`,
 			backgroundColor: player.millerColour,
-			borderRadius: '50%',
-			border: isSelected ? '2px solid red' : '0',
-			cursor: isActivePlayer ? 'pointer' : 'auto',
-			position: 'absolute',
 			left: `${((x * SQUARE_SIZE) - (size / 2))}px`,
 			top: `${((y * SQUARE_SIZE) - (size / 2))}px`,
-			transition: 'all 0.25s',
-			transitionTimingFunction: 'linear',
-			pointerEvents: 'auto',
-			zIndex: '2',
 		};
 	}
 
@@ -77,7 +87,7 @@ export const Miller = connect(null, mapDispathToProps)(class Miller extends Pure
 				{this.wrapPositionAtEdges(miller.position).map((position) => (
 					<div
 						key={`${miller.id}-${position}`}
-						className="miller-marker"
+						className={this.renderMillerClasses()}
 						style={this.renderMillerStyle(position)}
 						onClick={this.handleSelectMiller}
 						onKeyPress={this.handleKeyPress}

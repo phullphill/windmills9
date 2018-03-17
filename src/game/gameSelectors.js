@@ -27,6 +27,10 @@ export const gameSelectors = {
 			const oppositeApexDirection = (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction);
 			return vaneMills[oppositeApexDirection].position;
 		},
+		isInSpinningMill: (state, vaneId) => {
+			const vaneMills = gameSelectors.vane.mills(state, vaneId);
+			return COMPASS.quarters.some((q) => vaneMills[q].isSpinning());
+		},
 	},
 
 	mills: {
@@ -62,6 +66,14 @@ export const gameSelectors = {
 			const activeVaneId = gameSelectors.player.activeVaneId(state, playerId);
 			return activeVaneId ? gameSelectors.vane.byId(state, activeVaneId) : null;
 		},
+		spinningMillCount(state, playerId) {
+			const millers = gameSelectors.player.millers(state, playerId);
+			return millers.reduce((count, miller) => {
+				const mill = gameSelectors.mill.at(state, miller.position);
+				return count + (mill.isSpinning() ? 1 : 0);
+			}, 0);
+		},
+
 		points: (state, playerId) => gameSelectors.player.byId(state, playerId).points,
 	},
 

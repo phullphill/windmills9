@@ -10738,6 +10738,25 @@ exports.push([module.i, "body {\n  font-family: 'IM Fell English SC', serif;\n}\
 
 /***/ }),
 
+/***/ "./node_modules/css-loader/index.js!./node_modules/less-loader/dist/cjs.js!./src/ui/Millers/millers.less":
+/*!******************************************************************************************************!*\
+  !*** ./node_modules/css-loader!./node_modules/less-loader/dist/cjs.js!./src/ui/Millers/millers.less ***!
+  \******************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loader/lib/css-base.js */ "./node_modules/css-loader/lib/css-base.js")(false);
+// imports
+
+
+// module
+exports.push([module.i, ".millers-wrapper {\n  position: relative;\n  height: inherit;\n  width: inherit;\n  overflow: hidden;\n  pointer-events: none;\n}\n.millers-wrapper .miller .miller-marker {\n  width: 15px;\n  height: 15px;\n  border-radius: 50%;\n  border: 0;\n  cursor: auto;\n  transition: all 0.25s;\n  transition-timing-function: linear;\n  pointer-events: auto;\n  z-index: 2;\n  position: absolute;\n}\n.millers-wrapper .miller .miller-marker.is-selected {\n  border: 2px solid red;\n}\n.millers-wrapper .miller .miller-marker.is-active-player {\n  cursor: pointer;\n}\n.millers-wrapper .miller .miller-marker.is-milling {\n  background-color: red;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+
 /***/ "./node_modules/css-loader/lib/css-base.js":
 /*!*************************************************!*\
   !*** ./node_modules/css-loader/lib/css-base.js ***!
@@ -40170,9 +40189,9 @@ function composeRootSaga(sagas) {
 			switch (_context3.prev = _context3.next) {
 				case 0:
 					_context3.next = 2;
-					return sagas.map(function (saga) {
+					return (0, _effects.all)(sagas.map(function (saga) {
 						return (0, _effects.fork)(saga);
-					});
+					}));
 
 				case 2:
 				case 'end':
@@ -40761,8 +40780,11 @@ Object.defineProperty(exports, "__esModule", {
 exports.randomIntInclusive = randomIntInclusive;
 exports.range = range;
 exports.transformObject = transformObject;
+exports.randomBoardPosition = randomBoardPosition;
 
-var _enums = __webpack_require__(/*! ./enums */ "./src/common/enums.js");
+var _game = __webpack_require__(/*! game */ "./src/game/index.js");
+
+var _models = __webpack_require__(/*! models */ "./src/models/index.js");
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -40784,6 +40806,10 @@ function transformObject(obj, keys, transformer) {
 		transformed[key] = transformer(obj[key]);
 	});
 	return transformed;
+}
+
+function randomBoardPosition() {
+	return new _models.Position(randomIntInclusive(0, _game.gameConfig.board.width - 1), randomIntInclusive(0, _game.gameConfig.board.height - 1));
 }
 
 /***/ }),
@@ -41016,6 +41042,12 @@ var gameSelectors = exports.gameSelectors = {
 			var vaneMills = gameSelectors.vane.mills(state, vaneId);
 			var oppositeApexDirection = player.colour === 'black' ? _common.COMPASS.opposite(vane.direction) : vane.direction;
 			return vaneMills[oppositeApexDirection].position;
+		},
+		isInSpinningMill: function isInSpinningMill(state, vaneId) {
+			var vaneMills = gameSelectors.vane.mills(state, vaneId);
+			return _common.COMPASS.quarters.some(function (q) {
+				return vaneMills[q].isSpinning();
+			});
 		}
 	},
 
@@ -41073,6 +41105,15 @@ var gameSelectors = exports.gameSelectors = {
 			var activeVaneId = gameSelectors.player.activeVaneId(state, playerId);
 			return activeVaneId ? gameSelectors.vane.byId(state, activeVaneId) : null;
 		},
+		spinningMillCount: function spinningMillCount(state, playerId) {
+			var millers = gameSelectors.player.millers(state, playerId);
+			return millers.reduce(function (count, miller) {
+				var mill = gameSelectors.mill.at(state, miller.position);
+				return count + (mill.isSpinning() ? 1 : 0);
+			}, 0);
+		},
+
+
 		points: function points(state, playerId) {
 			return gameSelectors.player.byId(state, playerId).points;
 		}
@@ -41134,8 +41175,6 @@ var _models = __webpack_require__(/*! models */ "./src/models/index.js");
 
 var _gameActions = __webpack_require__(/*! ./gameActions */ "./src/game/gameActions.js");
 
-var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/gameSelectors.js");
-
 var _gameStoreHelpers = __webpack_require__(/*! ./gameStoreHelpers */ "./src/game/gameStoreHelpers.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -41167,12 +41206,8 @@ function initialState() {
 }
 
 function rotateVane(state, playerId, vaneId, spinDirection) {
-	var vane = state.getIn(['board', 'vanes', vaneId]);
-	var currentDirection = vane.direction;
-	var nextDirection = spinDirection === _common.SPIN.CLOCKWISE ? _common.COMPASS.after2(currentDirection) : _common.COMPASS.before2(currentDirection);
-	var apexPositions = _gameSelectors.gameSelectors.vane.apexPositions({ game: state }, playerId, vaneId);
-	return state.setIn(['board', 'vanes', vane.id, 'direction'], nextDirection).withMutations(function (mutatableState) {
-		mutatableState = (0, _gameStoreHelpers.rotateVaneFollowUp)(mutatableState, playerId, vaneId, apexPositions, spinDirection);
+	return state.withMutations(function (mutatableState) {
+		mutatableState = (0, _gameStoreHelpers.rotateVaneHelper)(mutatableState, playerId, vaneId, spinDirection);
 	});
 }
 
@@ -41293,9 +41328,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.vaneIsRotateable = vaneIsRotateable;
 exports.determineMillSpin = determineMillSpin;
-exports.rotateVaneFollowUp = rotateVaneFollowUp;
+exports.rotateVaneHelper = rotateVaneHelper;
 
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+
+var _models = __webpack_require__(/*! models */ "./src/models/index.js");
 
 var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/gameSelectors.js");
 
@@ -41331,6 +41368,11 @@ function vaneIsRotateable(state, playerId, vaneId) {
 	});
 }
 
+/**
+ * Determine if the vanes are aligned so the mill is spinning
+ * @param {array} vanes
+ * @return {enum} spin status of mill
+ */
 function determineMillSpin(vanes) {
 	if (vanes[_common.COMPASS.NORTHWEST].direction === _common.COMPASS.NORTHEAST && vanes[_common.COMPASS.NORTHEAST].direction === _common.COMPASS.SOUTHEAST && vanes[_common.COMPASS.SOUTHEAST].direction === _common.COMPASS.SOUTHWEST && vanes[_common.COMPASS.SOUTHWEST].direction === _common.COMPASS.NORTHWEST) {
 		return _common.SPIN.CLOCKWISE;
@@ -41348,9 +41390,16 @@ function determineMillSpin(vanes) {
  * @param {string} vaneId
  * @return {object} mutated state
  */
-function rotateVaneFollowUp(state, playerId, vaneId, oldApexPositions, spinDirection) {
+function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 	var player = _gameSelectors.gameSelectors.player.byId({ game: state }, playerId);
 	var vane = _gameSelectors.gameSelectors.vane.byId({ game: state }, vaneId);
+	var currentDirection = vane.direction;
+	var nextDirection = spinDirection === _common.SPIN.CLOCKWISE ? _common.COMPASS.after2(currentDirection) : _common.COMPASS.before2(currentDirection);
+	var oldApexPositions = _gameSelectors.gameSelectors.vane.apexPositions({ game: state }, playerId, vaneId);
+	var oldSpinningMillCount = _gameSelectors.gameSelectors.player.spinningMillCount({ game: state }, playerId);
+
+	// rotate the vane
+	state.setIn(['board', 'vanes', vane.id, 'direction'], nextDirection);
 
 	// move the millers at vane corners
 	var apexMillers = oldApexPositions.map(function (p) {
@@ -41370,6 +41419,38 @@ function rotateVaneFollowUp(state, playerId, vaneId, oldApexPositions, spinDirec
 		var spin = determineMillSpin(millVanes);
 		state = state.setIn(['board', 'mills', id, 'spin'], spin);
 	});
+
+	// count occupied spinning mills for each player
+	var players = _gameSelectors.gameSelectors.players.all({ game: state });
+	players.forEach(function (p) {
+		state = state.setIn(['players', p.id, 'millCount'], _gameSelectors.gameSelectors.player.spinningMillCount({ game: state }, p.id));
+	});
+
+	// give the player a new miller if they've got more spinning mills after the rotate than before
+	if (_gameSelectors.gameSelectors.player.spinningMillCount({ game: state }, playerId) > oldSpinningMillCount) {
+		var nMillers = player.millers.size;
+		var id = playerId + '-' + nMillers;
+
+		var allMillers = players.reduce(function (all, p) {
+			return all.concat(p.millers.toArray());
+		}, []);
+		var allPositions = allMillers.map(function (m) {
+			return m.position;
+		});
+		var positionNotUnique = function positionNotUnique(positions, position) {
+			return positions.some(function (p) {
+				return p.isAt(position);
+			});
+		};
+		var position = void 0;
+		do {
+			position = (0, _common.randomBoardPosition)();
+		} while (positionNotUnique(allPositions, position));
+
+		var points = 0;
+		var newMiller = new _models.Miller({ playerId: playerId, id: id, position: position, points: points });
+		state = state.setIn(['players', playerId, 'millers', id], newMiller);
+	}
 
 	return state.game;
 }
@@ -41922,19 +42003,11 @@ var _immutable2 = _interopRequireDefault(_immutable);
 
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
-var _game = __webpack_require__(/*! game */ "./src/game/index.js");
-
-var _Position = __webpack_require__(/*! ./Position */ "./src/models/Position.js");
-
 var _Player = __webpack_require__(/*! ./Player */ "./src/models/Player.js");
 
 var _Miller = __webpack_require__(/*! ./Miller */ "./src/models/Miller.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function randomBoardPosition() {
-	return new _Position.Position((0, _common.randomIntInclusive)(0, _game.gameConfig.board.width - 1), (0, _common.randomIntInclusive)(0, _game.gameConfig.board.height - 1));
-}
 
 function uniquePositions(nGroups, nPerGroup) {
 	var allPositions = [];
@@ -41949,7 +42022,7 @@ function uniquePositions(nGroups, nPerGroup) {
 		(0, _common.range)(0, nPerGroup - 1).forEach(function () {
 			var position = null;
 			do {
-				position = randomBoardPosition();
+				position = (0, _common.randomBoardPosition)();
 			} while (positionNotUnique(allPositions, position));
 			allPositions.push(position);
 			groupPositions.push(position);
@@ -42116,19 +42189,6 @@ var Vane = exports.Vane = function (_VaneRecord) {
 			return otherVanes.some(function (v) {
 				return _this2.isSameAs(v);
 			});
-		}
-	}, {
-		key: 'isInOperatingMill',
-		value: function isInOperatingMill(mills) {
-			var _this3 = this;
-
-			var millIds = _common.COMPASS.symbols.map(function (k) {
-				return _this3.millIds[k];
-			});
-			var someMillIsOperating = millIds.some(function (id) {
-				return mills.get(id).isSpinning();
-			});
-			return someMillIsOperating;
 		}
 	}]);
 
@@ -42560,10 +42620,11 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-function mapStateToProps(state) {
+function mapStateToProps(state, ownProps) {
 	return {
 		activePlayerId: _game.gameSelectors.players.activeId(state),
-		activeVaneId: _game.gameSelectors.player.activeVaneId(state, _game.gameSelectors.players.activeId(state))
+		activeVaneId: _game.gameSelectors.player.activeVaneId(state, _game.gameSelectors.players.activeId(state)),
+		isSpinning: _game.gameSelectors.vane.isInSpinningMill(state, ownProps.vane.id)
 	};
 }
 
@@ -42591,9 +42652,7 @@ var Vane = exports.Vane = (0, _reactRedux.connect)(mapStateToProps, mapDispatchT
 			args[_key] = arguments[_key];
 		}
 
-		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Vane.__proto__ || Object.getPrototypeOf(Vane)).call.apply(_ref, [this].concat(args))), _this), _this.canBeRotated = function () {
-			return true;
-		}, _this.handleClickVane = function () {
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Vane.__proto__ || Object.getPrototypeOf(Vane)).call.apply(_ref, [this].concat(args))), _this), _this.handleClickVane = function () {
 			var _this$props = _this.props,
 			    vane = _this$props.vane,
 			    activePlayerId = _this$props.activePlayerId,
@@ -42607,11 +42666,12 @@ var Vane = exports.Vane = (0, _reactRedux.connect)(mapStateToProps, mapDispatchT
 		}, _this.renderWrapperClasses = function () {
 			var _this$props2 = _this.props,
 			    vane = _this$props2.vane,
-			    activeVaneId = _this$props2.activeVaneId;
+			    activeVaneId = _this$props2.activeVaneId,
+			    isSpinning = _this$props2.isSpinning;
 
 			return (0, _classnames2.default)('vane-wrapper', {
 				'is-active': vane.id === activeVaneId,
-				'rotatable': _this.canBeRotated()
+				'is-spinning': isSpinning
 			});
 		}, _this.renderWrapperStyle = function () {
 			var colIndex = _this.props.colIndex;
@@ -42655,6 +42715,7 @@ var Vane = exports.Vane = (0, _reactRedux.connect)(mapStateToProps, mapDispatchT
 	activeVaneId: null
 }, _class.propTypes = {
 	vane: _propTypes2.default.shape({}).isRequired,
+	isSpinning: _propTypes2.default.bool.isRequired,
 	colIndex: _propTypes2.default.number.isRequired,
 	activePlayerId: _propTypes2.default.string.isRequired,
 	activeVaneId: _propTypes2.default.string,
@@ -44094,6 +44155,10 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
 
+var _classnames = __webpack_require__(/*! classnames */ "./node_modules/classnames/index.js");
+
+var _classnames2 = _interopRequireDefault(_classnames);
+
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
 var _models = __webpack_require__(/*! models */ "./src/models/index.js");
@@ -44108,7 +44173,13 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-function mapDispathToProps(dispatch) {
+function mapStateToProps(state, ownProps) {
+	return {
+		mill: _game.gameSelectors.mill.at(state, ownProps.miller.position)
+	};
+}
+
+function mapDispatchToProps(dispatch) {
 	return {
 		actions: {
 			setActiveMiller: function setActiveMiller(playerId, millerId) {
@@ -44118,7 +44189,7 @@ function mapDispathToProps(dispatch) {
 	};
 }
 
-var Miller = exports.Miller = (0, _reactRedux.connect)(null, mapDispathToProps)((_temp2 = _class = function (_PureComponent) {
+var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)((_temp2 = _class = function (_PureComponent) {
 	_inherits(Miller, _PureComponent);
 
 	function Miller() {
@@ -44156,30 +44227,29 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(null, mapDispathToProps)(
 				positions.push(new _models.Position(board.width, board.height));
 			}
 			return positions;
-		}, _this.renderMillerStyle = function (position) {
+		}, _this.renderMillerClasses = function () {
 			var _this$props2 = _this.props,
 			    player = _this$props2.player,
 			    isActivePlayer = _this$props2.isActivePlayer,
-			    miller = _this$props2.miller;
+			    miller = _this$props2.miller,
+			    mill = _this$props2.mill;
+
+			var isSelected = miller.id === player.activeMillerId;
+			return (0, _classnames2.default)('miller-marker', {
+				'is-active-player': isActivePlayer,
+				'is-selected': isSelected,
+				'is-milling': mill.isSpinning()
+			});
+		}, _this.renderMillerStyle = function (position) {
+			var player = _this.props.player;
 			var x = position.x,
 			    y = position.y;
 
 			var size = _common.SQUARE_SIZE * 0.3;
-			var isSelected = miller.id === player.activeMillerId;
 			return {
-				width: size + 'px',
-				height: size + 'px',
 				backgroundColor: player.millerColour,
-				borderRadius: '50%',
-				border: isSelected ? '2px solid red' : '0',
-				cursor: isActivePlayer ? 'pointer' : 'auto',
-				position: 'absolute',
 				left: x * _common.SQUARE_SIZE - size / 2 + 'px',
-				top: y * _common.SQUARE_SIZE - size / 2 + 'px',
-				transition: 'all 0.25s',
-				transitionTimingFunction: 'linear',
-				pointerEvents: 'auto',
-				zIndex: '2'
+				top: y * _common.SQUARE_SIZE - size / 2 + 'px'
 			};
 		}, _temp), _possibleConstructorReturn(_this, _ret);
 	}
@@ -44197,7 +44267,7 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(null, mapDispathToProps)(
 				this.wrapPositionAtEdges(miller.position).map(function (position) {
 					return _react2.default.createElement('div', {
 						key: miller.id + '-' + position,
-						className: 'miller-marker',
+						className: _this2.renderMillerClasses(),
 						style: _this2.renderMillerStyle(position),
 						onClick: _this2.handleSelectMiller,
 						onKeyPress: _this2.handleKeyPress
@@ -44213,6 +44283,7 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(null, mapDispathToProps)(
 	player: _propTypes2.default.shape({}).isRequired,
 	isActivePlayer: _propTypes2.default.bool.isRequired,
 	miller: _propTypes2.default.shape({}).isRequired,
+	mill: _propTypes2.default.shape({}).isRequired,
 	actions: _propTypes2.default.shape({}).isRequired
 }, _temp2));
 
@@ -44245,6 +44316,8 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _Miller = __webpack_require__(/*! ./Miller */ "./src/ui/Millers/Miller.js");
 
+__webpack_require__(/*! ./millers.less */ "./src/ui/Millers/millers.less");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -44260,16 +44333,6 @@ var Millers = exports.Millers = function (_PureComponent) {
 		_classCallCheck(this, Millers);
 
 		var _this = _possibleConstructorReturn(this, (Millers.__proto__ || Object.getPrototypeOf(Millers)).call(this, props));
-
-		_this.renderWrapperStyle = function () {
-			return {
-				position: 'absolute',
-				height: 'inherit',
-				width: 'inherit',
-				overflow: 'hidden',
-				pointerEvents: 'none'
-			};
-		};
 
 		_this.state = { hasError: false };
 		return _this;
@@ -44303,7 +44366,7 @@ var Millers = exports.Millers = function (_PureComponent) {
 
 			return _react2.default.createElement(
 				'div',
-				{ className: 'millers-wrapper', style: this.renderWrapperStyle() },
+				{ className: 'millers-wrapper' },
 				players.map(function (player) {
 					return player.millers.toArray().map(function (miller) {
 						return _react2.default.createElement(_Miller.Miller, {
@@ -44355,6 +44418,36 @@ Object.keys(_Millers).forEach(function (key) {
     }
   });
 });
+
+/***/ }),
+
+/***/ "./src/ui/Millers/millers.less":
+/*!*************************************!*\
+  !*** ./src/ui/Millers/millers.less ***!
+  \*************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+
+var content = __webpack_require__(/*! !../../../node_modules/css-loader!../../../node_modules/less-loader/dist/cjs.js!./millers.less */ "./node_modules/css-loader/index.js!./node_modules/less-loader/dist/cjs.js!./src/ui/Millers/millers.less");
+
+if(typeof content === 'string') content = [[module.i, content, '']];
+
+var transform;
+var insertInto;
+
+
+
+var options = {"hmr":true}
+
+options.transform = transform
+options.insertInto = undefined;
+
+var update = __webpack_require__(/*! ../../../node_modules/style-loader/lib/addStyles.js */ "./node_modules/style-loader/lib/addStyles.js")(content, options);
+
+if(content.locals) module.exports = content.locals;
+
+if(false) {}
 
 /***/ }),
 

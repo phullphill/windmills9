@@ -1,13 +1,7 @@
 import Immutable from 'immutable';
-import { randomIntInclusive, range } from 'common';
-import { gameConfig } from 'game';
-import { Position } from './Position';
+import { randomBoardPosition, range } from 'common';
 import { Player } from './Player';
 import { Miller } from './Miller';
-
-function randomBoardPosition() {
-	return new Position(randomIntInclusive(0, gameConfig.board.width - 1), randomIntInclusive(0, gameConfig.board.height - 1));
-}
 
 function uniquePositions(nGroups, nPerGroup) {
 	let allPositions = [];

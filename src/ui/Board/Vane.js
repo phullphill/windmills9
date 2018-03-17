@@ -6,10 +6,11 @@ import classNames from 'classnames';
 import { COMPASS, SQUARE_SIZE } from 'common';
 import { gameActions, gameSelectors } from 'game';
 
-function mapStateToProps(state) {
+function mapStateToProps(state, ownProps) {
 	return {
 		activePlayerId: gameSelectors.players.activeId(state),
 		activeVaneId: gameSelectors.player.activeVaneId(state, gameSelectors.players.activeId(state)),
+		isSpinning: gameSelectors.vane.isInSpinningMill(state, ownProps.vane.id),
 	};
 }
 
@@ -29,13 +30,12 @@ export const Vane = connect(mapStateToProps, mapDispatchToProps)(class Vane exte
 
 	static propTypes = {
 		vane: PropTypes.shape({}).isRequired,
+		isSpinning: PropTypes.bool.isRequired,
 		colIndex: PropTypes.number.isRequired,
 		activePlayerId: PropTypes.string.isRequired,
 		activeVaneId: PropTypes.string,
 		actions: PropTypes.shape({}).isRequired,
 	}
-
-	canBeRotated = () => true
 
 	handleClickVane = () => {
 		const { vane, activePlayerId, activeVaneId, actions } = this.props;
@@ -46,12 +46,12 @@ export const Vane = connect(mapStateToProps, mapDispatchToProps)(class Vane exte
 	}
 
 	renderWrapperClasses = () => {
-		const { vane, activeVaneId } = this.props;
+		const { vane, activeVaneId, isSpinning } = this.props;
 		return classNames(
 			'vane-wrapper',
 			{
 				'is-active': vane.id === activeVaneId,
-				'rotatable': this.canBeRotated(),
+				'is-spinning': isSpinning,
 			}
 		);
 	}

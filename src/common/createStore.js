@@ -1,7 +1,7 @@
 import { createStore, applyMiddleware, combineReducers, compose } from 'redux';
 import thunk from 'redux-thunk';
 import { createLogger } from 'redux-logger';
-import { call, fork, put, takeEvery } from 'redux-saga/effects';
+import { call, fork, put, all, takeEvery } from 'redux-saga/effects';
 import createSagaMiddleware, { END } from 'redux-saga';
 import Immutable from 'immutable';
 import { ignoreActions } from './middleware';
@@ -139,7 +139,7 @@ function registerStandardMiddleware(env) {
  * @return {array} of forked sagas
  */
 function* composeRootSaga(sagas) {
-	yield sagas.map((saga) => fork(saga));
+	yield all(sagas.map((saga) => fork(saga)));
 }
 
 /**

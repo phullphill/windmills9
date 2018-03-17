@@ -1,10 +1,9 @@
 
 import Immutable from 'immutable';
-import { COMPASS, SPIN, registerReducers, range, randomIntInclusive } from 'common';
+import { COMPASS, registerReducers, range, randomIntInclusive } from 'common';
 import { Board, createPlayers, Wind } from 'models';
 import { gameActions } from './gameActions';
-import { gameSelectors } from './gameSelectors';
-import { rotateVaneFollowUp, vaneIsRotateable } from './gameStoreHelpers';
+import { rotateVaneHelper, vaneIsRotateable } from './gameStoreHelpers';
 
 export const gameConfig = {
 	board: {
@@ -36,14 +35,9 @@ function initialState() {
 }
 
 function rotateVane(state, playerId, vaneId, spinDirection) {
-	const vane = state.getIn(['board', 'vanes', vaneId]);
-	const currentDirection = vane.direction;
-	const nextDirection = spinDirection === SPIN.CLOCKWISE ? COMPASS.after2(currentDirection) : COMPASS.before2(currentDirection);
-	const apexPositions = gameSelectors.vane.apexPositions({ game: state }, playerId, vaneId);
-	return state.setIn(['board', 'vanes', vane.id, 'direction'], nextDirection)
-		.withMutations((mutatableState) => {
-			mutatableState = rotateVaneFollowUp(mutatableState, playerId, vaneId, apexPositions, spinDirection);
-		});
+	return state.withMutations((mutatableState) => {
+		mutatableState = rotateVaneHelper(mutatableState, playerId, vaneId, spinDirection);
+	});
 }
 
 function setActivePlayer(state, playerId) {

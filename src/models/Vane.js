@@ -26,10 +26,4 @@ export class Vane extends VaneRecord {
 		return otherVanes.some((v) => this.isSameAs(v));
 	}
 
-	isInOperatingMill(mills) {
-		const millIds = COMPASS.symbols.map((k) => this.millIds[k]);
-		const someMillIsOperating = millIds.some((id) => mills.get(id).isSpinning());
-		return someMillIsOperating;
-	}
-
 }

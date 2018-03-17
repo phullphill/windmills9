@@ -3,6 +3,8 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { Miller } from './Miller';
 
+import './millers.less';
+
 export class Millers extends PureComponent {
 
 	static propTypes = {
@@ -23,14 +25,6 @@ export class Millers extends PureComponent {
 		console.log(error, info);
 	}
 
-	renderWrapperStyle = () => ({
-		position: 'absolute',
-		height: 'inherit',
-		width: 'inherit',
-		overflow: 'hidden',
-		pointerEvents: 'none',
-	});
-
 	render() {
 		const { hasError } = this.state;
 		if (hasError) {
@@ -39,7 +33,7 @@ export class Millers extends PureComponent {
 
 		const { board, players, activePlayerId } = this.props;
 		return (
-			<div className="millers-wrapper" style={this.renderWrapperStyle()} >
+			<div className="millers-wrapper" >
 				{players.map((player) =>
 					(player.millers.toArray().map((miller) => (
 						<Miller
