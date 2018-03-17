@@ -13,6 +13,13 @@ export const gameSelectors = {
 		byId: (state, vaneId) => gameSelectors.board.board(state).vanes.get(vaneId),
 		millIds: (state, vaneId) => gameSelectors.vane.byId(state, vaneId).millIds,
 		mills: (state, vaneId) => transformObject(gameSelectors.vane.millIds(state, vaneId), COMPASS.quarters, (millId) => gameSelectors.mill.byId(state, millId)),
+		apexPositions: (state, playerId, vaneId) => {
+			const player = gameSelectors.player.byId(state, playerId);
+			const vane = gameSelectors.vane.byId(state, vaneId);
+			const vaneMills = gameSelectors.vane.mills(state, vaneId);
+			const vanePointDirections = COMPASS.quarters.filter((q) => q !== (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction));
+			return vanePointDirections.map((d) => vaneMills[d].position);
+		},
 	},
 
 	mills: {
@@ -24,11 +31,8 @@ export const gameSelectors = {
 		vaneIds: (state, millId) => gameSelectors.mill.byId(state, millId).get('vaneIds'),
 		vanes: (state, millId) => {
 			const vaneIds = gameSelectors.mill.vaneIds(state, millId);
-			console.log(vaneIds);
 			const res = transformObject(vaneIds, COMPASS.quarters, (vaneId) => gameSelectors.vane.byId(state, vaneId));
-			console.log(res);
 			return res;
-			// return transformObject(gameSelectors.mill.vaneIds(state, millId), COMPASS.quarters, (vaneId) => gameSelectors.vane.byId(state, vaneId));
 		},
 	},
 
@@ -56,6 +60,10 @@ export const gameSelectors = {
 
 	miller: {
 		byId: (state, playerId, millerId) => state.game.players.getIn([playerId, 'millers', millerId]),
+		atPosition: (state, playerId, position) => {
+			const player = gameSelectors.player.byId(state, playerId);
+			return player.millerAt(position);
+		},
 		position: (state, playerId, millerId) => gameSelectors.miller.byId(state, playerId, millerId).position,
 		nextPosition: (state, playerId, millerId, toDirection) => {
 			const board = gameSelectors.board.board(state);

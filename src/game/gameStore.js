@@ -3,6 +3,7 @@ import Immutable from 'immutable';
 import { COMPASS, SPIN, registerReducers, range, randomIntInclusive } from 'common';
 import { Board, createPlayers, Wind } from 'models';
 import { gameActions } from './gameActions';
+import { gameSelectors } from './gameSelectors';
 import { rotateVaneFollowUp, vaneHasMillerTrio } from './gameStoreHelpers';
 
 export const gameConfig = {
@@ -25,7 +26,6 @@ export const gameConfig = {
 	},
 };
 
-
 function initialState() {
 	return Immutable.Record({
 		board: new Board(gameConfig.board),
@@ -39,9 +39,10 @@ function rotateVane(state, playerId, vaneId, spinDirection) {
 	const vane = state.getIn(['board', 'vanes', vaneId]);
 	const currentDirection = vane.direction;
 	const nextDirection = spinDirection === SPIN.CLOCKWISE ? COMPASS.after2(currentDirection) : COMPASS.before2(currentDirection);
+	const apexPositions = gameSelectors.vane.apexPositions({ game: state }, playerId, vaneId);
 	return state.setIn(['board', 'vanes', vane.id, 'direction'], nextDirection)
 		.withMutations((mutatableState) => {
-			mutatableState = rotateVaneFollowUp({ game: mutatableState }, playerId, vaneId);
+			mutatableState = rotateVaneFollowUp(mutatableState, playerId, vaneId, apexPositions, spinDirection);
 		});
 }
 

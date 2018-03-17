@@ -11,13 +11,9 @@ import { gameSelectors } from './gameSelectors';
  * @return {string} vaneId or null
  */
 export function vaneHasMillerTrio(state, playerId, vaneId) {
-	const player = gameSelectors.player.byId(state, playerId);
+	const apexPositions = gameSelectors.vane.apexPositions(state, playerId, vaneId);
 	const millers = gameSelectors.player.millers(state, playerId);
-	const vane = gameSelectors.vane.byId(state, vaneId);
-	const vaneMills = gameSelectors.vane.mills(state, vaneId);
-	const vanePointDirections = COMPASS.quarters.filter((q) => q !== (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction));
-	const vanePoints = vanePointDirections.map((d) => vaneMills[d].position);
-	return vanePoints.every((p) => millers.some((m) => m.isAt(p)));
+	return apexPositions.every((p) => millers.some((m) => m.isAt(p)));
 }
 
 export function determineMillSpin(vanes) {
@@ -43,23 +39,24 @@ export function determineMillSpin(vanes) {
  * @param {string} vaneId
  * @return {object} mutated state
  */
-export function rotateVaneFollowUp(state, playerId, vaneId) {
-	console.log('rotateVaneFollowUp ', state, playerId, vaneId);
-
-	const player = gameSelectors.player.byId(state, playerId);
-	const vane = gameSelectors.vane.byId(state, vaneId);
+export function rotateVaneFollowUp(state, playerId, vaneId, oldApexPositions, spinDirection) {
+	const player = gameSelectors.player.byId({ game: state }, playerId);
+	const vane = gameSelectors.vane.byId({ game: state }, vaneId);
 
 	// move the millers at vane corners
-
-
-	// check spin state of any nearby mills
-	const millIds = COMPASS.quarters.map((k) => vane.millIds[k]);
-	console.log('rotateVaneFollowUp ', millIds);
-	millIds.forEach((id) => {
-		const millVanes = gameSelectors.mill.vanes(state, id);
-		const spin = determineMillSpin(millVanes);
-		state = state.game.setIn(['board', 'mills', id, 'spin'], spin);
+	const apexMillers = oldApexPositions.map((p) => player.millerAt(p));
+	const newApexPositions = gameSelectors.vane.apexPositions({ game: state }, playerId, vaneId);
+	apexMillers.forEach((miller, index) => {
+		state = state.setIn(['players', playerId, 'millers', miller.id, 'position'], newApexPositions[index]);
 	});
 
-	return state;
+	// check spin state of mills at the corners of the rotated vane
+	const millIds = COMPASS.quarters.map((k) => vane.millIds[k]);
+	millIds.forEach((id) => {
+		const millVanes = gameSelectors.mill.vanes({ game: state }, id);
+		const spin = determineMillSpin(millVanes);
+		state = state.setIn(['board', 'mills', id, 'spin'], spin);
+	});
+
+	return state.game;
 }
