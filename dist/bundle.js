@@ -41009,6 +41009,13 @@ var gameSelectors = exports.gameSelectors = {
 			return vanePointDirections.map(function (d) {
 				return vaneMills[d].position;
 			});
+		},
+		oppositeApexPosition: function oppositeApexPosition(state, playerId, vaneId) {
+			var player = gameSelectors.player.byId(state, playerId);
+			var vane = gameSelectors.vane.byId(state, vaneId);
+			var vaneMills = gameSelectors.vane.mills(state, vaneId);
+			var oppositeApexDirection = player.colour === 'black' ? _common.COMPASS.opposite(vane.direction) : vane.direction;
+			return vaneMills[oppositeApexDirection].position;
 		}
 	},
 
@@ -41201,7 +41208,7 @@ function setActiveVane(state, _ref3) {
 	    vaneId = _ref3.vaneId;
 
 	var activeVaneId = state.getIn(['players', playerId, 'activeVaneId']);
-	if (vaneId === activeVaneId || !(0, _gameStoreHelpers.vaneHasMillerTrio)({ game: state }, playerId, vaneId)) {
+	if (vaneId === activeVaneId || !(0, _gameStoreHelpers.vaneIsRotateable)({ game: state }, playerId, vaneId)) {
 		return state;
 	}
 	return state.setIn(['players', playerId, 'activeVaneId'], vaneId);
@@ -41284,7 +41291,7 @@ var gameStore = exports.gameStore = function gameStore() {
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.vaneHasMillerTrio = vaneHasMillerTrio;
+exports.vaneIsRotateable = vaneIsRotateable;
 exports.determineMillSpin = determineMillSpin;
 exports.rotateVaneFollowUp = rotateVaneFollowUp;
 
@@ -41301,12 +41308,25 @@ var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/game
  * @param {string} vaneId
  * @return {string} vaneId or null
  */
-function vaneHasMillerTrio(state, playerId, vaneId) {
+function vaneIsRotateable(state, playerId, vaneId) {
+
+	// check this player has a miller at each corner of the vane
 	var apexPositions = _gameSelectors.gameSelectors.vane.apexPositions(state, playerId, vaneId);
 	var millers = _gameSelectors.gameSelectors.player.millers(state, playerId);
-	return apexPositions.every(function (p) {
+	if (!apexPositions.every(function (p) {
 		return millers.some(function (m) {
 			return m.isAt(p);
+		});
+	})) {
+		return false;
+	}
+
+	// check no player has a miller at the opposite corner
+	var oppositeApexPosition = _gameSelectors.gameSelectors.vane.oppositeApexPosition(state, playerId, vaneId);
+	var allPlayers = _gameSelectors.gameSelectors.players.all(state);
+	return allPlayers.every(function (p) {
+		return !p.millers.some(function (m) {
+			return m.isAt(oppositeApexPosition);
 		});
 	});
 }

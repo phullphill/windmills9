@@ -4,7 +4,7 @@ import { COMPASS, SPIN, registerReducers, range, randomIntInclusive } from 'comm
 import { Board, createPlayers, Wind } from 'models';
 import { gameActions } from './gameActions';
 import { gameSelectors } from './gameSelectors';
-import { rotateVaneFollowUp, vaneHasMillerTrio } from './gameStoreHelpers';
+import { rotateVaneFollowUp, vaneIsRotateable } from './gameStoreHelpers';
 
 export const gameConfig = {
 	board: {
@@ -68,7 +68,7 @@ function moveMiller(state, { playerId, millerId, toPosition }) {
 
 function setActiveVane(state, { playerId, vaneId }) {
 	const activeVaneId = state.getIn(['players', playerId, 'activeVaneId']);
-	if (vaneId === activeVaneId || !vaneHasMillerTrio({ game: state }, playerId, vaneId)) {
+	if (vaneId === activeVaneId || !vaneIsRotateable({ game: state }, playerId, vaneId)) {
 		return state;
 	}
 	return state.setIn(['players', playerId, 'activeVaneId'], vaneId);

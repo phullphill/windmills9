@@ -10,10 +10,19 @@ import { gameSelectors } from './gameSelectors';
  * @param {string} vaneId
  * @return {string} vaneId or null
  */
-export function vaneHasMillerTrio(state, playerId, vaneId) {
+export function vaneIsRotateable(state, playerId, vaneId) {
+
+	// check this player has a miller at each corner of the vane
 	const apexPositions = gameSelectors.vane.apexPositions(state, playerId, vaneId);
 	const millers = gameSelectors.player.millers(state, playerId);
-	return apexPositions.every((p) => millers.some((m) => m.isAt(p)));
+	if (!apexPositions.every((p) => millers.some((m) => m.isAt(p)))) {
+		return false;
+	}
+
+	// check no player has a miller at the opposite corner
+	const oppositeApexPosition = gameSelectors.vane.oppositeApexPosition(state, playerId, vaneId);
+	const allPlayers = gameSelectors.players.all(state);
+	return allPlayers.every((p) => !p.millers.some((m) => m.isAt(oppositeApexPosition)));
 }
 
 export function determineMillSpin(vanes) {

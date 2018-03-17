@@ -20,6 +20,13 @@ export const gameSelectors = {
 			const vanePointDirections = COMPASS.quarters.filter((q) => q !== (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction));
 			return vanePointDirections.map((d) => vaneMills[d].position);
 		},
+		oppositeApexPosition: (state, playerId, vaneId) => {
+			const player = gameSelectors.player.byId(state, playerId);
+			const vane = gameSelectors.vane.byId(state, vaneId);
+			const vaneMills = gameSelectors.vane.mills(state, vaneId);
+			const oppositeApexDirection = (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction);
+			return vaneMills[oppositeApexDirection].position;
+		},
 	},
 
 	mills: {
