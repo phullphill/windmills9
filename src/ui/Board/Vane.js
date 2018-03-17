@@ -8,11 +8,20 @@ import { gameActions, gameSelectors } from 'game';
 
 function mapStateToProps(state) {
 	return {
+		activePlayerId: gameSelectors.players.activeId(state),
 		activeVaneId: gameSelectors.player.activeVaneId(state, gameSelectors.players.activeId(state)),
 	};
 }
 
-export const Vane = connect(mapStateToProps)(class Vane extends PureComponent {
+function mapDispatchToProps(dispatch) {
+	return {
+		actions: {
+			setActiveVane: (playerId, vaneId) => dispatch(gameActions.setActiveVane({ playerId, vaneId })),
+		},
+	};
+}
+
+export const Vane = connect(mapStateToProps, mapDispatchToProps)(class Vane extends PureComponent {
 
 	static defaultProps = {
 		activeVaneId: null,
@@ -21,10 +30,20 @@ export const Vane = connect(mapStateToProps)(class Vane extends PureComponent {
 	static propTypes = {
 		vane: PropTypes.shape({}).isRequired,
 		colIndex: PropTypes.number.isRequired,
+		activePlayerId: PropTypes.string.isRequired,
 		activeVaneId: PropTypes.string,
+		actions: PropTypes.shape({}).isRequired,
 	}
 
 	canBeRotated = () => true
+
+	handleClickVane = () => {
+		const { vane, activePlayerId, activeVaneId, actions } = this.props;
+		if (vane.id === activeVaneId) {
+			return;
+		}
+		actions.setActiveVane(activePlayerId, vane.id);
+	}
 
 	renderWrapperClasses = () => {
 		const { vane, activeVaneId } = this.props;
@@ -64,6 +83,8 @@ export const Vane = connect(mapStateToProps)(class Vane extends PureComponent {
 				id={vane.id}
 				className={this.renderWrapperClasses()}
 				style={this.renderWrapperStyle()}
+				onClick={this.handleClickVane}
+				onKeyPress={this.handleClickVane}
 			>
 				<div className={this.renderVaneClasses()} />
 			</div>

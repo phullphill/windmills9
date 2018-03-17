@@ -22,7 +22,14 @@ export const gameSelectors = {
 		byId: (state, millId) => gameSelectors.board.board(state).getIn(['mills', millId]),
 		at: (state, position) => gameSelectors.board.board(state).millAt(position),
 		vaneIds: (state, millId) => gameSelectors.mill.byId(state, millId).get('vaneIds'),
-		vanes: (state, millId) => transformObject(gameSelectors.mill.vaneIds(state, millId), COMPASS.quarters, (vaneId) => gameSelectors.vane.byId(state, vaneId)),
+		vanes: (state, millId) => {
+			const vaneIds = gameSelectors.mill.vaneIds(state, millId);
+			console.log(vaneIds);
+			const res = transformObject(vaneIds, COMPASS.quarters, (vaneId) => gameSelectors.vane.byId(state, vaneId));
+			console.log(res);
+			return res;
+			// return transformObject(gameSelectors.mill.vaneIds(state, millId), COMPASS.quarters, (vaneId) => gameSelectors.vane.byId(state, vaneId));
+		},
 	},
 
 	players: {

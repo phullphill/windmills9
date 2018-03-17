@@ -7,28 +7,17 @@ import { gameSelectors } from './gameSelectors';
  * Otherwise return null.
  * @param {object} state
  * @param {string} playerId
- * @param {string} millerId
- * @param {object} toPosition
+ * @param {string} vaneId
  * @return {string} vaneId or null
  */
-export function analyseMillerTrioPositions(state, playerId, millerId, toPosition) {
-	let rotateableVaneId = null;
-
+export function vaneHasMillerTrio(state, playerId, vaneId) {
 	const player = gameSelectors.player.byId(state, playerId);
 	const millers = gameSelectors.player.millers(state, playerId);
-	const mill = gameSelectors.mill.at(state, toPosition);
-	const millVanes = gameSelectors.mill.vanes(state, mill.id);
-	COMPASS.quarters.forEach((quarter) => {
-		const vane = millVanes[quarter];
-		const vaneMills = gameSelectors.vane.mills(state, vane.id);
-		const vanePointDirections = COMPASS.quarters.filter((q) => q !== (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction));
-		const vanePoints = vanePointDirections.map((d) => vaneMills[d].position);
-		if (vanePoints.every((p) => millers.some((m) => m.isAt(p)))) {
-			rotateableVaneId = vane.id;
-		}
-	});
-
-	return rotateableVaneId;
+	const vane = gameSelectors.vane.byId(state, vaneId);
+	const vaneMills = gameSelectors.vane.mills(state, vaneId);
+	const vanePointDirections = COMPASS.quarters.filter((q) => q !== (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction));
+	const vanePoints = vanePointDirections.map((d) => vaneMills[d].position);
+	return vanePoints.every((p) => millers.some((m) => m.isAt(p)));
 }
 
 export function determineMillSpin(vanes) {
@@ -55,6 +44,8 @@ export function determineMillSpin(vanes) {
  * @return {object} mutated state
  */
 export function rotateVaneFollowUp(state, playerId, vaneId) {
+	console.log('rotateVaneFollowUp ', state, playerId, vaneId);
+
 	const player = gameSelectors.player.byId(state, playerId);
 	const vane = gameSelectors.vane.byId(state, vaneId);
 
@@ -63,10 +54,11 @@ export function rotateVaneFollowUp(state, playerId, vaneId) {
 
 	// check spin state of any nearby mills
 	const millIds = COMPASS.quarters.map((k) => vane.millIds[k]);
+	console.log('rotateVaneFollowUp ', millIds);
 	millIds.forEach((id) => {
 		const millVanes = gameSelectors.mill.vanes(state, id);
 		const spin = determineMillSpin(millVanes);
-		state = state.setIn(['board', 'mills', id, 'spin'], spin);
+		state = state.game.setIn(['board', 'mills', id, 'spin'], spin);
 	});
 
 	return state;

@@ -3,7 +3,7 @@ import Immutable from 'immutable';
 import { COMPASS, SPIN, registerReducers, range, randomIntInclusive } from 'common';
 import { Board, createPlayers, Wind } from 'models';
 import { gameActions } from './gameActions';
-import { analyseMillerTrioPositions, rotateVaneFollowUp } from './gameStoreHelpers';
+import { rotateVaneFollowUp, vaneHasMillerTrio } from './gameStoreHelpers';
 
 export const gameConfig = {
 	board: {
@@ -62,11 +62,15 @@ function setActiveMiller(state, { playerId, millerId }) {
 }
 
 function moveMiller(state, { playerId, millerId, toPosition }) {
-	return state.setIn(['players', playerId, 'millers', millerId, 'position'], toPosition)
-		.withMutations((mutatableState) => {
-			const rotateableVaneId = analyseMillerTrioPositions({ game: mutatableState }, playerId, millerId, toPosition);
-			mutatableState = mutatableState.setIn(['players', playerId, 'activeVaneId'], rotateableVaneId);
-		});
+	return state.setIn(['players', playerId, 'millers', millerId, 'position'], toPosition);
+}
+
+function setActiveVane(state, { playerId, vaneId }) {
+	const activeVaneId = state.getIn(['players', playerId, 'activeVaneId']);
+	if (vaneId === activeVaneId || !vaneHasMillerTrio({ game: state }, playerId, vaneId)) {
+		return state;
+	}
+	return state.setIn(['players', playerId, 'activeVaneId'], vaneId);
 }
 
 function randomWindChange(state, payload) {
@@ -107,6 +111,9 @@ export const gameStore = (state = initialState(), action = {}) => {
 
 		case gameActions.setActivePlayer.type:
 			return setActivePlayer(state, payload);
+
+		case gameActions.setActiveVane.type:
+			return setActiveVane(state, payload);
 
 		case gameActions.setActiveMiller.type:
 			return setActiveMiller(state, payload);
