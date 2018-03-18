@@ -68,7 +68,15 @@ function setActiveVane(state, { playerId, vaneId }) {
 	return state.setIn(['players', playerId, 'activeVaneId'], vaneId);
 }
 
-function randomWindChange(state, payload) {
+function addPoints(state, { playerId, millerId, points }) {
+	if (points === 0) {
+		return state;
+	}
+	const oldPoints = state.getIn(['players', playerId, 'millers', millerId, 'points']);
+	return state.setIn(['players', playerId, 'millers', millerId, 'points'], oldPoints + points);
+}
+
+function randomWindChange(state) {
 	const oldWind = state.get('wind');
 	let newDirection = oldWind.direction;
 	let newForce = oldWind.force;
@@ -115,6 +123,9 @@ export const gameStore = (state = initialState(), action = {}) => {
 
 		case gameActions.moveMiller.type:
 			return moveMiller(state, payload);
+
+		case gameActions.addPoints.type:
+			return addPoints(state, payload);
 
 		case gameActions.randomWindChange.type:
 			return randomWindChange(state, payload);

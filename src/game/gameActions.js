@@ -49,6 +49,15 @@ export const gameActions = {
 	rotateVane: createStoreAction('ROTATE_VANE'),
 
 	/**
+	 * Adds some point to a miller.
+	 * @param {object} payload
+	 * @param {object} payload.playerId - id of player
+	 * @param {object} payload.millerId - id of miller gaining points
+	 * @param {object} payload.points - points to add
+	 */
+	addPoints: createStoreAction('ADD_POINTS'),
+
+	/**
 	 * Change the wind randomly
 	 */
 	randomWindChange: createStoreAction('RANDOM_WIND_CHANGE'),

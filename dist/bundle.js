@@ -40972,6 +40972,15 @@ var gameActions = exports.gameActions = {
 	rotateVane: (0, _common.createStoreAction)('ROTATE_VANE'),
 
 	/**
+  * Adds some point to a miller.
+  * @param {object} payload
+  * @param {object} payload.playerId - id of player
+  * @param {object} payload.millerId - id of miller gaining points
+  * @param {object} payload.points - points to add
+  */
+	addPoints: (0, _common.createStoreAction)('ADD_POINTS'),
+
+	/**
   * Change the wind randomly
   */
 	randomWindChange: (0, _common.createStoreAction)('RANDOM_WIND_CHANGE')
@@ -40993,6 +41002,8 @@ var gameActions = exports.gameActions = {
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
+exports.accumulatePoints = accumulatePoints;
+exports.aiPlayerActions = aiPlayerActions;
 exports.nextPlayerHandler = nextPlayerHandler;
 
 var _effects = __webpack_require__(/*! redux-saga/effects */ "./node_modules/redux-saga/es/effects.js");
@@ -41005,62 +41016,86 @@ var _gameActions = __webpack_require__(/*! ./gameActions */ "./src/game/gameActi
 
 var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/gameSelectors.js");
 
-var _marked = /*#__PURE__*/regeneratorRuntime.mark(nextPlayerHandler);
+var _marked = /*#__PURE__*/regeneratorRuntime.mark(accumulatePoints),
+    _marked2 = /*#__PURE__*/regeneratorRuntime.mark(aiPlayerActions),
+    _marked3 = /*#__PURE__*/regeneratorRuntime.mark(nextPlayerHandler);
 
-function nextPlayerHandler(action) {
-	var state, allPlayers, activePlayer, activePlayerIndex, nextPlayerIndex, nextPlayer, _nearestBestMillAndMi, bestMillId, bestMillerId, activeMillerId, activeMiller, fromPosition, board, toDirection, toPosition;
-
-	return regeneratorRuntime.wrap(function nextPlayerHandler$(_context) {
+function accumulatePoints(state, allPlayers) {
+	var windForce, pointsActions;
+	return regeneratorRuntime.wrap(function accumulatePoints$(_context) {
 		while (1) {
 			switch (_context.prev = _context.next) {
 				case 0:
-					_context.next = 2;
-					return (0, _effects.select)();
+					windForce = _gameSelectors.gameSelectors.wind.force(state);
 
-				case 2:
-					state = _context.sent;
-					allPlayers = _gameSelectors.gameSelectors.players.all(state);
-					activePlayer = _gameSelectors.gameSelectors.players.active(state);
-					activePlayerIndex = allPlayers.findIndex(function (player) {
-						return player.id === activePlayer.id;
-					});
-					nextPlayerIndex = (activePlayerIndex + 1) % allPlayers.length;
-					nextPlayer = allPlayers[nextPlayerIndex];
-					_context.next = 10;
-					return (0, _effects.put)(_gameActions.gameActions.setActivePlayer(nextPlayer.id));
-
-				case 10:
-					if (nextPlayer.isAI) {
-						_context.next = 12;
+					if (!(windForce === 0)) {
+						_context.next = 3;
 						break;
 					}
 
 					return _context.abrupt('return');
 
-				case 12:
+				case 3:
+					pointsActions = [];
+
+					allPlayers.forEach(function (player) {
+						var millers = _gameSelectors.gameSelectors.player.millers(state, player.id);
+						millers.forEach(function (miller) {
+							var mill = _gameSelectors.gameSelectors.mill.at(state, miller.position);
+							if (mill.isSpinning()) {
+								pointsActions.push((0, _effects.put)(_gameActions.gameActions.addPoints({ playerId: player.id, millerId: miller.id, points: windForce })));
+							}
+						});
+					});
+
+					if (!(pointsActions.length > 0)) {
+						_context.next = 8;
+						break;
+					}
+
+					_context.next = 8;
+					return (0, _effects.all)(pointsActions);
+
+				case 8:
+				case 'end':
+					return _context.stop();
+			}
+		}
+	}, _marked, this);
+}
+
+function aiPlayerActions(state, player) {
+	var playerId, _nearestBestMillAndMi, bestMillId, bestMillerId, millerId, activeMiller, fromPosition, board, toDirection, toPosition;
+
+	return regeneratorRuntime.wrap(function aiPlayerActions$(_context2) {
+		while (1) {
+			switch (_context2.prev = _context2.next) {
+				case 0:
+					playerId = player.id;
 
 					// determine which mill to target
+
 					_nearestBestMillAndMi = (0, _ai.nearestBestMillAndMiller)(state), bestMillId = _nearestBestMillAndMi.bestMillId, bestMillerId = _nearestBestMillAndMi.bestMillerId;
 
 					// figure out which miller to move
 
-					activeMillerId = _gameSelectors.gameSelectors.player.activeMiller(state, nextPlayer.id);
+					millerId = _gameSelectors.gameSelectors.player.activeMiller(state, playerId);
 
-					if (!(!activeMillerId || activeMillerId !== bestMillerId)) {
-						_context.next = 18;
+					if (!(!millerId || millerId !== bestMillerId)) {
+						_context2.next = 7;
 						break;
 					}
 
-					activeMillerId = bestMillerId;
+					millerId = bestMillerId;
 
 					// set it active
-					_context.next = 18;
-					return (0, _effects.put)(_gameActions.gameActions.setActiveMiller({ playerId: nextPlayer.id, millerId: activeMillerId }));
+					_context2.next = 7;
+					return (0, _effects.put)(_gameActions.gameActions.setActiveMiller({ playerId: playerId, millerId: millerId }));
 
-				case 18:
+				case 7:
 
 					// decide where to move it to
-					activeMiller = _gameSelectors.gameSelectors.miller.byId(state, nextPlayer.id, activeMillerId);
+					activeMiller = _gameSelectors.gameSelectors.miller.byId(state, playerId, millerId);
 					fromPosition = activeMiller.position;
 					board = _gameSelectors.gameSelectors.board.board(state);
 					toDirection = _common.COMPASS.random();
@@ -41068,19 +41103,70 @@ function nextPlayerHandler(action) {
 
 					// move it
 
-					_context.next = 25;
-					return (0, _effects.put)(_gameActions.gameActions.moveMiller({ playerId: nextPlayer.id, millerId: activeMillerId, toPosition: toPosition }));
+					_context2.next = 14;
+					return (0, _effects.put)(_gameActions.gameActions.moveMiller({ playerId: playerId, millerId: millerId, toPosition: toPosition }));
 
-				case 25:
-					_context.next = 27;
-					return (0, _effects.put)(_gameActions.gameActions.nextPlayer.request());
-
-				case 27:
+				case 14:
 				case 'end':
-					return _context.stop();
+					return _context2.stop();
 			}
 		}
-	}, _marked, this);
+	}, _marked2, this);
+}
+
+function nextPlayerHandler(action) {
+	var state, allPlayers, activePlayer, activePlayerIndex, nextPlayerIndex, nextPlayer;
+	return regeneratorRuntime.wrap(function nextPlayerHandler$(_context3) {
+		while (1) {
+			switch (_context3.prev = _context3.next) {
+				case 0:
+					_context3.next = 2;
+					return (0, _effects.select)();
+
+				case 2:
+					state = _context3.sent;
+					allPlayers = _gameSelectors.gameSelectors.players.all(state);
+					activePlayer = _gameSelectors.gameSelectors.players.active(state);
+
+					// everyone gets points and the wind changes
+
+					_context3.next = 7;
+					return (0, _effects.call)(accumulatePoints, state, allPlayers);
+
+				case 7:
+					_context3.next = 9;
+					return (0, _effects.put)(_gameActions.gameActions.randomWindChange());
+
+				case 9:
+
+					// who's next
+					activePlayerIndex = allPlayers.findIndex(function (player) {
+						return player.id === activePlayer.id;
+					});
+					nextPlayerIndex = (activePlayerIndex + 1) % allPlayers.length;
+					nextPlayer = allPlayers[nextPlayerIndex];
+					_context3.next = 14;
+					return (0, _effects.put)(_gameActions.gameActions.setActivePlayer(nextPlayer.id));
+
+				case 14:
+					if (!nextPlayer.isAI) {
+						_context3.next = 19;
+						break;
+					}
+
+					_context3.next = 17;
+					return (0, _effects.call)(aiPlayerActions, state, nextPlayer);
+
+				case 17:
+					_context3.next = 19;
+					return (0, _effects.put)(_gameActions.gameActions.nextPlayer.request());
+
+				case 19:
+				case 'end':
+					return _context3.stop();
+			}
+		}
+	}, _marked3, this);
 }
 (0, _common.registerTakeEverySaga)(_gameActions.gameActions.nextPlayer, nextPlayerHandler);
 
@@ -41353,7 +41439,19 @@ function setActiveVane(state, _ref3) {
 	return state.setIn(['players', playerId, 'activeVaneId'], vaneId);
 }
 
-function randomWindChange(state, payload) {
+function addPoints(state, _ref4) {
+	var playerId = _ref4.playerId,
+	    millerId = _ref4.millerId,
+	    points = _ref4.points;
+
+	if (points === 0) {
+		return state;
+	}
+	var oldPoints = state.getIn(['players', playerId, 'millers', millerId, 'points']);
+	return state.setIn(['players', playerId, 'millers', millerId, 'points'], oldPoints + points);
+}
+
+function randomWindChange(state) {
 	var oldWind = state.get('wind');
 	var newDirection = oldWind.direction;
 	var newForce = oldWind.force;
@@ -41403,6 +41501,9 @@ var gameStore = exports.gameStore = function gameStore() {
 
 		case _gameActions.gameActions.moveMiller.type:
 			return moveMiller(state, payload);
+
+		case _gameActions.gameActions.addPoints.type:
+			return addPoints(state, payload);
 
 		case _gameActions.gameActions.randomWindChange.type:
 			return randomWindChange(state, payload);
