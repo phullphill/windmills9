@@ -70,11 +70,11 @@ export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller 
 	}
 
 	renderMillerStyle = (position) => {
-		const { player } = this.props;
+		const { player, mill } = this.props;
 		const { x, y } = position;
 		const size = SQUARE_SIZE * 0.3;
 		return {
-			backgroundColor: player.millerColour,
+			backgroundColor: mill.isSpinning() ? 'red' : player.millerColour,
 			left: `${((x * SQUARE_SIZE) - (size / 2))}px`,
 			top: `${((y * SQUARE_SIZE) - (size / 2))}px`,
 		};

@@ -34,6 +34,7 @@ export const gameSelectors = {
 	},
 
 	mills: {
+		all: (state) => gameSelectors.board.board(state).mills.toArray(),
 	},
 
 	mill: {

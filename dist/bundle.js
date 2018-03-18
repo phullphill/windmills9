@@ -39833,6 +39833,98 @@ module.exports = function(originalModule) {
 
 /***/ }),
 
+/***/ "./src/ai/aiAnalysis.js":
+/*!******************************!*\
+  !*** ./src/ai/aiAnalysis.js ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.analyseMills = analyseMills;
+exports.findBestMill = findBestMill;
+exports.nearestBestMillAndMiller = nearestBestMillAndMiller;
+
+var _game = __webpack_require__(/*! game */ "./src/game/index.js");
+
+function analyseMills(state) {
+	var analysis = {};
+	var board = _game.gameSelectors.board.board(state);
+	return analysis;
+}
+
+function findBestMill(state) {
+	var bestMillId = '1.1';
+	var millAnalysis = analyseMills(state);
+	return bestMillId;
+}
+
+function nearestBestMillAndMiller(state) {
+	var bestMillId = '1.1';
+	var bestMillerId = 'B-0';
+	var millAnalysis = analyseMills(state);
+	return { bestMillId: bestMillId, bestMillerId: bestMillerId };
+}
+
+/***/ }),
+
+/***/ "./src/ai/aiStrategy.js":
+/*!******************************!*\
+  !*** ./src/ai/aiStrategy.js ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/***/ }),
+
+/***/ "./src/ai/index.js":
+/*!*************************!*\
+  !*** ./src/ai/index.js ***!
+  \*************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _aiAnalysis = __webpack_require__(/*! ./aiAnalysis */ "./src/ai/aiAnalysis.js");
+
+Object.keys(_aiAnalysis).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _aiAnalysis[key];
+    }
+  });
+});
+
+var _aiStrategy = __webpack_require__(/*! ./aiStrategy */ "./src/ai/aiStrategy.js");
+
+Object.keys(_aiStrategy).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _aiStrategy[key];
+    }
+  });
+});
+
+/***/ }),
+
 /***/ "./src/common/compassEnum.js":
 /*!***********************************!*\
   !*** ./src/common/compassEnum.js ***!
@@ -40907,6 +40999,8 @@ var _effects = __webpack_require__(/*! redux-saga/effects */ "./node_modules/red
 
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
+var _ai = __webpack_require__(/*! ai */ "./src/ai/index.js");
+
 var _gameActions = __webpack_require__(/*! ./gameActions */ "./src/game/gameActions.js");
 
 var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/gameSelectors.js");
@@ -40914,7 +41008,8 @@ var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/game
 var _marked = /*#__PURE__*/regeneratorRuntime.mark(nextPlayerHandler);
 
 function nextPlayerHandler(action) {
-	var state, allPlayers, activePlayer, activePlayerIndex, nextPlayerIndex, nextPlayer, activeMiller, allMillers, board, toDirection, toPosition;
+	var state, allPlayers, activePlayer, activePlayerIndex, nextPlayerIndex, nextPlayer, _nearestBestMillAndMi, bestMillId, bestMillerId, activeMillerId, activeMiller, fromPosition, board, toDirection, toPosition;
+
 	return regeneratorRuntime.wrap(function nextPlayerHandler$(_context) {
 		while (1) {
 			switch (_context.prev = _context.next) {
@@ -40944,38 +41039,43 @@ function nextPlayerHandler(action) {
 
 				case 12:
 
-					// determine strategy - which mill to target
+					// determine which mill to target
+					_nearestBestMillAndMi = (0, _ai.nearestBestMillAndMiller)(state), bestMillId = _nearestBestMillAndMi.bestMillId, bestMillerId = _nearestBestMillAndMi.bestMillerId;
 
 					// figure out which miller to move
-					activeMiller = _gameSelectors.gameSelectors.player.activeMiller(state, nextPlayer.id);
 
-					if (!activeMiller) {
-						allMillers = _gameSelectors.gameSelectors.player.millers(state, nextPlayer.id);
+					activeMillerId = _gameSelectors.gameSelectors.player.activeMiller(state, nextPlayer.id);
 
-						activeMiller = allMillers.first();
+					if (!(!activeMillerId || activeMillerId !== bestMillerId)) {
+						_context.next = 18;
+						break;
 					}
 
-					// set it active
-					_context.next = 16;
-					return (0, _effects.put)(_gameActions.gameActions.setActiveMiller({ playerId: nextPlayer.id, millerId: activeMiller.id }));
+					activeMillerId = bestMillerId;
 
-				case 16:
+					// set it active
+					_context.next = 18;
+					return (0, _effects.put)(_gameActions.gameActions.setActiveMiller({ playerId: nextPlayer.id, millerId: activeMillerId }));
+
+				case 18:
 
 					// decide where to move it to
+					activeMiller = _gameSelectors.gameSelectors.miller.byId(state, nextPlayer.id, activeMillerId);
+					fromPosition = activeMiller.position;
 					board = _gameSelectors.gameSelectors.board.board(state);
-					toDirection = _common.COMPASS.NORTH;
-					toPosition = board.nextPositionFrom(activeMiller.position, toDirection);
+					toDirection = _common.COMPASS.random();
+					toPosition = board.nextPositionFrom(fromPosition, toDirection);
 
 					// move it
 
-					_context.next = 21;
-					return (0, _effects.put)(_gameActions.gameActions.moveMiller({ playerId: nextPlayer.id, millerId: activeMiller.id, toPosition: toPosition }));
+					_context.next = 25;
+					return (0, _effects.put)(_gameActions.gameActions.moveMiller({ playerId: nextPlayer.id, millerId: activeMillerId, toPosition: toPosition }));
 
-				case 21:
-					_context.next = 23;
+				case 25:
+					_context.next = 27;
 					return (0, _effects.put)(_gameActions.gameActions.nextPlayer.request());
 
-				case 23:
+				case 27:
 				case 'end':
 					return _context.stop();
 			}
@@ -41051,7 +41151,11 @@ var gameSelectors = exports.gameSelectors = {
 		}
 	},
 
-	mills: {},
+	mills: {
+		all: function all(state) {
+			return gameSelectors.board.board(state).mills.toArray();
+		}
+	},
 
 	mill: {
 		byId: function byId(state, millId) {
@@ -44241,13 +44345,15 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 				'is-milling': mill.isSpinning()
 			});
 		}, _this.renderMillerStyle = function (position) {
-			var player = _this.props.player;
+			var _this$props3 = _this.props,
+			    player = _this$props3.player,
+			    mill = _this$props3.mill;
 			var x = position.x,
 			    y = position.y;
 
 			var size = _common.SQUARE_SIZE * 0.3;
 			return {
-				backgroundColor: player.millerColour,
+				backgroundColor: mill.isSpinning() ? 'red' : player.millerColour,
 				left: x * _common.SQUARE_SIZE - size / 2 + 'px',
 				top: y * _common.SQUARE_SIZE - size / 2 + 'px'
 			};
