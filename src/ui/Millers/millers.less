@@ -35,5 +35,53 @@
 			}
 
 		}
+
+		.mill-indicator.clockwise {
+			animation: clockwise 8s linear infinite;
+		}
+		.mill-indicator.anticlockwise {
+			animation: anticlockwise 8s linear infinite;
+		}
 	}
 }
+
+@keyframes clockwise
+	{
+	from
+		{
+		transform: rotate(0deg);
+		-o-transform: rotate(0deg);
+		-ms-transform: rotate(0deg);
+		-moz-transform: rotate(0deg);
+		-webkit-transform: rotate(0deg);
+		}
+	to
+		{
+		transform: rotate(360deg);
+		-o-transform: rotate(360deg);
+		-ms-transform: rotate(360deg);
+		-moz-transform: rotate(360deg);
+		-webkit-transform: rotate(360deg);
+		}
+	}
+
+@keyframes anticlockwise
+	{
+	from
+		{
+		transform: rotate(360deg);
+		-o-transform: rotate(360deg);
+		-ms-transform: rotate(360deg);
+		-moz-transform: rotate(360deg);
+		-webkit-transform: rotate(360deg);
+		}
+	to
+		{
+		transform: rotate(0deg);
+		-o-transform: rotate(0deg);
+		-ms-transform: rotate(0deg);
+		-moz-transform: rotate(0deg);
+		-webkit-transform: rotate(0deg);
+		}
+	}
+

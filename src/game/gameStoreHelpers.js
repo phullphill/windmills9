@@ -32,18 +32,19 @@ export function vaneIsRotateable(state, playerId, vaneId) {
  * @return {enum} spin status of mill
  */
 export function determineMillSpin(vanes) {
+	let spin = SPIN.NOSPIN;
 	if (vanes[COMPASS.NORTHWEST].direction === COMPASS.NORTHEAST &&
 		vanes[COMPASS.NORTHEAST].direction === COMPASS.SOUTHEAST &&
 		vanes[COMPASS.SOUTHEAST].direction === COMPASS.SOUTHWEST &&
 		vanes[COMPASS.SOUTHWEST].direction === COMPASS.NORTHWEST) {
-		return SPIN.CLOCKWISE;
+		spin = SPIN.CLOCKWISE;
 	} else if (vanes[COMPASS.NORTHWEST].direction === COMPASS.SOUTHWEST &&
 		vanes[COMPASS.NORTHEAST].direction === COMPASS.NORTHWEST &&
 		vanes[COMPASS.SOUTHEAST].direction === COMPASS.NORTHEAST &&
 		vanes[COMPASS.SOUTHWEST].direction === COMPASS.SOUTHEAST) {
-		return SPIN.ANTICLOCKWISE;
+		spin = SPIN.ANTICLOCKWISE;
 	}
-	return SPIN.NOSPIN;
+	return spin;
 }
 
 /**
@@ -86,8 +87,13 @@ export function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 		state = state.setIn(['players', p.id, 'millCount'], gameSelectors.player.spinningMillCount({ game: state }, p.id));
 	});
 
-	// give the player a new miller if they've got more spinning mills after the rotate than before
+	// if they've got more spinning mills after the rotate than before
 	if (gameSelectors.player.spinningMillCount({ game: state }, playerId) > oldSpinningMillCount) {
+
+		// deactivate the rotated vane
+		state = state.setIn(['players', playerId, 'activeVaneId'], null);
+
+		// give the player a new miller
 		const nMillers = player.millers.size;
 		const id = `${playerId}-${nMillers}`;
 

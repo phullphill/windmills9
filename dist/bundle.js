@@ -10750,7 +10750,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, ".millers-wrapper {\n  position: relative;\n  height: inherit;\n  width: inherit;\n  overflow: hidden;\n  pointer-events: none;\n}\n.millers-wrapper .miller .miller-marker {\n  width: 15px;\n  height: 15px;\n  border-radius: 50%;\n  border: 0;\n  cursor: auto;\n  transition: all 0.25s;\n  transition-timing-function: linear;\n  pointer-events: auto;\n  z-index: 2;\n  position: absolute;\n}\n.millers-wrapper .miller .miller-marker.is-selected {\n  border: 2px solid red;\n}\n.millers-wrapper .miller .miller-marker.is-active-player {\n  cursor: pointer;\n}\n.millers-wrapper .miller .miller-marker.is-milling {\n  background-color: red;\n}\n", ""]);
+exports.push([module.i, ".millers-wrapper {\n  position: relative;\n  height: inherit;\n  width: inherit;\n  overflow: hidden;\n  pointer-events: none;\n}\n.millers-wrapper .miller .miller-marker {\n  width: 15px;\n  height: 15px;\n  border-radius: 50%;\n  border: 0;\n  cursor: auto;\n  transition: all 0.25s;\n  transition-timing-function: linear;\n  pointer-events: auto;\n  z-index: 2;\n  position: absolute;\n}\n.millers-wrapper .miller .miller-marker.is-selected {\n  border: 2px solid red;\n}\n.millers-wrapper .miller .miller-marker.is-active-player {\n  cursor: pointer;\n}\n.millers-wrapper .miller .miller-marker.is-milling {\n  background-color: red;\n}\n.millers-wrapper .miller .mill-indicator.clockwise {\n  animation: clockwise 8s linear infinite;\n}\n.millers-wrapper .miller .mill-indicator.anticlockwise {\n  animation: anticlockwise 8s linear infinite;\n}\n@keyframes clockwise {\n  from {\n    transform: rotate(0deg);\n    -o-transform: rotate(0deg);\n    -ms-transform: rotate(0deg);\n    -moz-transform: rotate(0deg);\n    -webkit-transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n    -o-transform: rotate(360deg);\n    -ms-transform: rotate(360deg);\n    -moz-transform: rotate(360deg);\n    -webkit-transform: rotate(360deg);\n  }\n}\n@keyframes anticlockwise {\n  from {\n    transform: rotate(360deg);\n    -o-transform: rotate(360deg);\n    -ms-transform: rotate(360deg);\n    -moz-transform: rotate(360deg);\n    -webkit-transform: rotate(360deg);\n  }\n  to {\n    transform: rotate(0deg);\n    -o-transform: rotate(0deg);\n    -ms-transform: rotate(0deg);\n    -moz-transform: rotate(0deg);\n    -webkit-transform: rotate(0deg);\n  }\n}\n", ""]);
 
 // exports
 
@@ -41478,12 +41478,13 @@ function vaneIsRotateable(state, playerId, vaneId) {
  * @return {enum} spin status of mill
  */
 function determineMillSpin(vanes) {
+	var spin = _common.SPIN.NOSPIN;
 	if (vanes[_common.COMPASS.NORTHWEST].direction === _common.COMPASS.NORTHEAST && vanes[_common.COMPASS.NORTHEAST].direction === _common.COMPASS.SOUTHEAST && vanes[_common.COMPASS.SOUTHEAST].direction === _common.COMPASS.SOUTHWEST && vanes[_common.COMPASS.SOUTHWEST].direction === _common.COMPASS.NORTHWEST) {
-		return _common.SPIN.CLOCKWISE;
+		spin = _common.SPIN.CLOCKWISE;
 	} else if (vanes[_common.COMPASS.NORTHWEST].direction === _common.COMPASS.SOUTHWEST && vanes[_common.COMPASS.NORTHEAST].direction === _common.COMPASS.NORTHWEST && vanes[_common.COMPASS.SOUTHEAST].direction === _common.COMPASS.NORTHEAST && vanes[_common.COMPASS.SOUTHWEST].direction === _common.COMPASS.SOUTHEAST) {
-		return _common.SPIN.ANTICLOCKWISE;
+		spin = _common.SPIN.ANTICLOCKWISE;
 	}
-	return _common.SPIN.NOSPIN;
+	return spin;
 }
 
 /**
@@ -41530,8 +41531,13 @@ function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 		state = state.setIn(['players', p.id, 'millCount'], _gameSelectors.gameSelectors.player.spinningMillCount({ game: state }, p.id));
 	});
 
-	// give the player a new miller if they've got more spinning mills after the rotate than before
+	// if they've got more spinning mills after the rotate than before
 	if (_gameSelectors.gameSelectors.player.spinningMillCount({ game: state }, playerId) > oldSpinningMillCount) {
+
+		// deactivate the rotated vane
+		state = state.setIn(['players', playerId, 'activeVaneId'], null);
+
+		// give the player a new miller
 		var nMillers = player.millers.size;
 		var id = playerId + '-' + nMillers;
 
@@ -43048,6 +43054,186 @@ Icon.propTypes = {
 
 /***/ }),
 
+/***/ "./src/ui/Common/MillIndicator.js":
+/*!****************************************!*\
+  !*** ./src/ui/Common/MillIndicator.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.MillIndicator = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+
+var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var MillIndicator = exports.MillIndicator = function (_PureComponent) {
+	_inherits(MillIndicator, _PureComponent);
+
+	function MillIndicator() {
+		_classCallCheck(this, MillIndicator);
+
+		return _possibleConstructorReturn(this, (MillIndicator.__proto__ || Object.getPrototypeOf(MillIndicator)).apply(this, arguments));
+	}
+
+	_createClass(MillIndicator, [{
+		key: 'render',
+		value: function render() {
+			var _props = this.props,
+			    className = _props.className,
+			    size = _props.size,
+			    colour = _props.colour,
+			    spin = _props.spin,
+			    style = _props.style;
+
+			var millSize = size * 2;
+			return _react2.default.createElement(
+				'svg',
+				{
+					className: className,
+					style: style,
+					width: millSize,
+					height: millSize,
+					viewBox: '-' + size + ',-' + size + ' ' + millSize + ',' + millSize
+				},
+				_common.COMPASS.quarters.map(function (q, index) {
+					return _react2.default.createElement(_ui.VaneIndicator, {
+						key: q.toString(),
+						size: size,
+						colour: colour,
+						direction: spin === _common.SPIN.CLOCKWISE ? _common.COMPASS.SOUTHWEST : _common.COMPASS.NORTHEAST,
+						transform: 'rotate(' + index * 90 + ' 0 0)'
+					});
+				})
+			);
+		}
+	}]);
+
+	return MillIndicator;
+}(_react.PureComponent);
+
+MillIndicator.defaultProps = {
+	className: '',
+	size: _common.SQUARE_SIZE,
+	colour: 'black',
+	spin: _common.SPIN.CLOCKWISE,
+	style: {}
+};
+MillIndicator.propTypes = {
+	className: _propTypes2.default.string,
+	size: _propTypes2.default.number,
+	colour: _propTypes2.default.string,
+	spin: _propTypes2.default.symbol,
+	style: _propTypes2.default.shape({})
+};
+
+/***/ }),
+
+/***/ "./src/ui/Common/VaneIndicator.js":
+/*!****************************************!*\
+  !*** ./src/ui/Common/VaneIndicator.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.VaneIndicator = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var VaneIndicator = exports.VaneIndicator = function (_PureComponent) {
+	_inherits(VaneIndicator, _PureComponent);
+
+	function VaneIndicator() {
+		_classCallCheck(this, VaneIndicator);
+
+		return _possibleConstructorReturn(this, (VaneIndicator.__proto__ || Object.getPrototypeOf(VaneIndicator)).apply(this, arguments));
+	}
+
+	_createClass(VaneIndicator, [{
+		key: 'render',
+		value: function render() {
+			var _pointsMap;
+
+			var _props = this.props,
+			    size = _props.size,
+			    direction = _props.direction,
+			    colour = _props.colour,
+			    transform = _props.transform;
+
+			var pointsMap = (_pointsMap = {}, _defineProperty(_pointsMap, _common.COMPASS.NORTHWEST, '0,0 ' + size + ',0 0,' + size), _defineProperty(_pointsMap, _common.COMPASS.NORTHEAST, size + ',0 ' + size + ',' + size + ' 0,0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHEAST, size + ',' + size + ' 0,' + size + ' ' + size + ',0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHWEST, '0,' + size + ' 0,0 ' + size + ',' + size), _pointsMap);
+			var points = pointsMap[direction];
+			return _react2.default.createElement('polygon', { points: points, fill: colour, transform: transform });
+		}
+	}]);
+
+	return VaneIndicator;
+}(_react.PureComponent);
+
+VaneIndicator.defaultProps = {
+	size: _common.SQUARE_SIZE,
+	direction: _common.COMPASS.NORTHEAST,
+	colour: 'black',
+	transform: ''
+};
+VaneIndicator.propTypes = {
+	size: _propTypes2.default.number,
+	direction: _propTypes2.default.symbol,
+	colour: _propTypes2.default.string,
+	transform: _propTypes2.default.string
+};
+
+/***/ }),
+
 /***/ "./src/ui/Common/index.js":
 /*!********************************!*\
   !*** ./src/ui/Common/index.js ***!
@@ -43070,6 +43256,30 @@ Object.keys(_Icon).forEach(function (key) {
     enumerable: true,
     get: function get() {
       return _Icon[key];
+    }
+  });
+});
+
+var _MillIndicator = __webpack_require__(/*! ./MillIndicator */ "./src/ui/Common/MillIndicator.js");
+
+Object.keys(_MillIndicator).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _MillIndicator[key];
+    }
+  });
+});
+
+var _VaneIndicator = __webpack_require__(/*! ./VaneIndicator */ "./src/ui/Common/VaneIndicator.js");
+
+Object.keys(_VaneIndicator).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _VaneIndicator[key];
     }
   });
 });
@@ -43592,16 +43802,8 @@ var PlayerScores = exports.PlayerScores = function (_PureComponent) {
 		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = PlayerScores.__proto__ || Object.getPrototypeOf(PlayerScores)).call.apply(_ref, [this].concat(args))), _this), _this.renderMillerColour = function (player) {
 			var style = { backgroundColor: player.millerColour };
 			return _react2.default.createElement('div', { className: 'miller', style: style });
-		}, _this.renderMillColour = function (player) {
-			var fillColour = player.colour;
-			return _react2.default.createElement(
-				'svg',
-				{ width: '20', height: '20', viewBox: '-10,-10 20,20' },
-				_react2.default.createElement('polygon', { points: '0,0 0,-10 -10,-10', fill: fillColour }),
-				_react2.default.createElement('polygon', { points: '0,0 10,0 10,-10', fill: fillColour }),
-				_react2.default.createElement('polygon', { points: '0,0 0,10 10,10', fill: fillColour }),
-				_react2.default.createElement('polygon', { points: '0,0 -10,0 -10,10', fill: fillColour })
-			);
+		}, _this.renderMillIndicator = function (player) {
+			return _react2.default.createElement(_ui.MillIndicator, { size: 10, colour: player.colour });
 		}, _this.renderActivePlayerIndicator = function (player) {
 			var activePlayerId = _this.props.activePlayerId;
 
@@ -43658,7 +43860,7 @@ var PlayerScores = exports.PlayerScores = function (_PureComponent) {
 								_react2.default.createElement(
 									'div',
 									{ className: 'player-mill-colour' },
-									_this2.renderMillColour(player)
+									_this2.renderMillIndicator(player)
 								),
 								_react2.default.createElement(
 									'div',
@@ -43716,11 +43918,9 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
-var _Common = __webpack_require__(/*! ../Common */ "./src/ui/Common/index.js");
+var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -43752,19 +43952,13 @@ var RotateButton = exports.RotateButton = function (_PureComponent) {
 			var id = spin === _common.SPIN.CLOCKWISE ? 'btn-cw' : 'btn-acw';
 			var name = spin === _common.SPIN.CLOCKWISE ? 'fa-redo-alt' : 'fa-undo-alt';
 			var iconSize = _common.SQUARE_SIZE * 0.6;
-			return _react2.default.createElement(_Common.Icon, {
+			return _react2.default.createElement(_ui.Icon, {
 				id: id,
 				name: name,
 				width: iconSize,
 				height: iconSize,
 				isDisabled: activeVane === null
 			});
-		}, _this.renderMiniVane = function (size, direction, colour, transform) {
-			var _pointsMap;
-
-			var pointsMap = (_pointsMap = {}, _defineProperty(_pointsMap, _common.COMPASS.NORTHWEST, '0,0 ' + size + ',0 0,' + size), _defineProperty(_pointsMap, _common.COMPASS.NORTHEAST, size + ',0 ' + size + ',' + size + ' 0,0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHEAST, size + ',' + size + ' 0,' + size + ' ' + size + ',0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHWEST, '0,' + size + ' 0,0 ' + size + ',' + size), _pointsMap);
-			var points = pointsMap[direction];
-			return _react2.default.createElement('polygon', { points: points, fill: colour, transform: transform });
 		}, _this.renderRightArrow = function (transform) {
 			var size = _common.SQUARE_SIZE * 0.2;
 			return _react2.default.createElement('path', {
@@ -43788,12 +43982,29 @@ var RotateButton = exports.RotateButton = function (_PureComponent) {
 			}
 			var directionAfterRotate = spin === _common.SPIN.CLOCKWISE ? _common.COMPASS.after2(directionNow) : _common.COMPASS.before2(directionNow);
 			var size = _common.SQUARE_SIZE * 0.2;
+			// const rotation = {
+			// 	[COMPASS.NORTHWEST]: -90,
+			// 	[COMPASS.NORTHEAST]: 0,
+			// 	[COMPASS.SOUTHEAST]: 90,
+			// 	[COMPASS.SOUTHWEST]: 180,
+			// };
+			// transform = {`rotate(${rotation[directionNow]}, ${size * 0.5} ${size * 0.5})`
+			// transform = {`translate(${size * 2},0) rotate(${rotation[directionAfterRotate]}, ${size * 0.5} ${size * 0.5})`
 			return _react2.default.createElement(
 				'svg',
 				{ width: '' + size * 3, height: '' + size, viewBox: '0,0 ' + size * 3 + ',' + size },
-				_this.renderMiniVane(size, directionNow, activePlayerColour),
+				_react2.default.createElement(_ui.VaneIndicator, {
+					size: size,
+					direction: directionNow,
+					colour: activePlayerColour
+				}),
 				_this.renderRightArrow('translate(' + size * 1 + ',0)'),
-				_this.renderMiniVane(size, directionAfterRotate, activePlayerColour, 'translate(' + size * 2 + ',0)')
+				_react2.default.createElement(_ui.VaneIndicator, {
+					size: size,
+					direction: directionAfterRotate,
+					colour: activePlayerColour,
+					transform: 'translate(' + size * 2 + ',0)'
+				})
 			);
 		}, _temp), _possibleConstructorReturn(_this, _ret);
 	}
@@ -44269,6 +44480,8 @@ var _models = __webpack_require__(/*! models */ "./src/models/index.js");
 
 var _game = __webpack_require__(/*! game */ "./src/game/index.js");
 
+var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -44353,10 +44566,46 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 
 			var size = _common.SQUARE_SIZE * 0.3;
 			return {
-				backgroundColor: mill.isSpinning() ? 'red' : player.millerColour,
+				backgroundColor: player.millerColour,
 				left: x * _common.SQUARE_SIZE - size / 2 + 'px',
 				top: y * _common.SQUARE_SIZE - size / 2 + 'px'
 			};
+		}, _this.renderSpinVane = function (quarter) {
+			return _react2.default.createElement('path', null);
+		}, _this.renderMillingIndicator = function () {
+			var _this$props4 = _this.props,
+			    player = _this$props4.player,
+			    mill = _this$props4.mill;
+
+			if (!mill.isSpinning()) {
+				return null;
+			}
+			var _mill$position = mill.position,
+			    x = _mill$position.x,
+			    y = _mill$position.y;
+
+			var size = _common.SQUARE_SIZE;
+			var spin = mill.spin;
+
+			if (player.colour === 'white') {
+				spin = spin === _common.SPIN.CLOCKWISE ? _common.SPIN.ANTICLOCKWISE : _common.SPIN.CLOCKWISE;
+			}
+			var className = (0, _classnames2.default)('mill-indicator', {
+				clockwise: spin === _common.SPIN.CLOCKWISE,
+				anticlockwise: spin === _common.SPIN.ANTICLOCKWISE
+			});
+			var style = {
+				position: 'absolute',
+				left: (x - 1) * size + 'px',
+				top: (y - 1) * size + 'px'
+			};
+			return _react2.default.createElement(_ui.MillIndicator, {
+				className: className,
+				style: style,
+				size: _common.SQUARE_SIZE,
+				spin: spin,
+				colour: player.colour
+			});
 		}, _temp), _possibleConstructorReturn(_this, _ret);
 	}
 
@@ -44378,7 +44627,8 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 						onClick: _this2.handleSelectMiller,
 						onKeyPress: _this2.handleKeyPress
 					});
-				})
+				}),
+				this.renderMillingIndicator()
 			);
 		}
 	}]);

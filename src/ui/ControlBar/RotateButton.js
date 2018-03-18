@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { SQUARE_SIZE, COMPASS, SPIN } from 'common';
 
-import { Icon } from '../Common';
+import { Icon, VaneIndicator } from 'ui';
 
 export class RotateButton extends PureComponent {
 
@@ -36,19 +36,6 @@ export class RotateButton extends PureComponent {
 		);
 	}
 
-	renderMiniVane = (size, direction, colour, transform) => {
-		const pointsMap = {
-			[COMPASS.NORTHWEST]: `0,0 ${size},0 0,${size}`,
-			[COMPASS.NORTHEAST]: `${size},0 ${size},${size} 0,0`,
-			[COMPASS.SOUTHEAST]: `${size},${size} 0,${size} ${size},0`,
-			[COMPASS.SOUTHWEST]: `0,${size} 0,0 ${size},${size}`,
-		};
-		const points = pointsMap[direction];
-		return (
-			<polygon points={points} fill={colour} transform={transform} />
-		);
-	}
-
 	renderRightArrow = (transform) => {
 		const size = SQUARE_SIZE * 0.2;
 		return (
@@ -72,11 +59,28 @@ export class RotateButton extends PureComponent {
 		}
 		const directionAfterRotate = spin === SPIN.CLOCKWISE ? COMPASS.after2(directionNow) : COMPASS.before2(directionNow);
 		const size = SQUARE_SIZE * 0.2;
+		// const rotation = {
+		// 	[COMPASS.NORTHWEST]: -90,
+		// 	[COMPASS.NORTHEAST]: 0,
+		// 	[COMPASS.SOUTHEAST]: 90,
+		// 	[COMPASS.SOUTHWEST]: 180,
+		// };
+		// transform = {`rotate(${rotation[directionNow]}, ${size * 0.5} ${size * 0.5})`
+		// transform = {`translate(${size * 2},0) rotate(${rotation[directionAfterRotate]}, ${size * 0.5} ${size * 0.5})`
 		return (
 			<svg width={`${size * 3}`} height={`${size}`} viewBox={`0,0 ${size * 3},${size}`} >
-				{this.renderMiniVane(size, directionNow, activePlayerColour)}
+				<VaneIndicator
+					size={size}
+					direction={directionNow}
+					colour={activePlayerColour}
+				/>
 				{this.renderRightArrow(`translate(${size * 1},0)`)}
-				{this.renderMiniVane(size, directionAfterRotate, activePlayerColour, `translate(${size * 2},0)`)}
+				<VaneIndicator
+					size={size}
+					direction={directionAfterRotate}
+					colour={activePlayerColour}
+					transform={`translate(${size * 2},0)`}
+				/>
 			</svg>
 		);
 	}

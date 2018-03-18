@@ -3,9 +3,10 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
-import { SQUARE_SIZE } from 'common';
+import { SQUARE_SIZE, SPIN } from 'common';
 import { Position } from 'models';
 import { gameActions, gameSelectors } from 'game';
+import { MillIndicator } from 'ui';
 
 function mapStateToProps(state, ownProps) {
 	return {
@@ -74,10 +75,48 @@ export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller 
 		const { x, y } = position;
 		const size = SQUARE_SIZE * 0.3;
 		return {
-			backgroundColor: mill.isSpinning() ? 'red' : player.millerColour,
+			backgroundColor: player.millerColour,
 			left: `${((x * SQUARE_SIZE) - (size / 2))}px`,
 			top: `${((y * SQUARE_SIZE) - (size / 2))}px`,
 		};
+	}
+
+	renderSpinVane = (quarter) => (
+		<path />
+	);
+
+	renderMillingIndicator = () => {
+		const { player, mill } = this.props;
+		if (!mill.isSpinning()) {
+			return null;
+		}
+		const { x, y } = mill.position;
+		const size = SQUARE_SIZE;
+		let { spin } = mill;
+		if (player.colour === 'white') {
+			spin = (spin === SPIN.CLOCKWISE ? SPIN.ANTICLOCKWISE : SPIN.CLOCKWISE);
+		}
+		const className = classNames(
+			'mill-indicator',
+			{
+				clockwise: spin === SPIN.CLOCKWISE,
+				anticlockwise: spin === SPIN.ANTICLOCKWISE,
+			}
+		);
+		const style = {
+			position: 'absolute',
+			left: `${(x - 1) * size}px`,
+			top: `${(y - 1) * size}px`,
+		};
+		return (
+			<MillIndicator
+				className={className}
+				style={style}
+				size={SQUARE_SIZE}
+				spin={spin}
+				colour={player.colour}
+			/>
+		);
 	}
 
 	render() {
@@ -93,6 +132,7 @@ export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller 
 						onKeyPress={this.handleKeyPress}
 					/>
 				))}
+				{this.renderMillingIndicator()}
 			</div>
 		);
 	}

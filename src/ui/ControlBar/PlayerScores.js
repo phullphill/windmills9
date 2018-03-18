@@ -1,7 +1,6 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-
-import { Icon } from 'ui';
+import { Icon, MillIndicator } from 'ui';
 
 export class PlayerScores extends PureComponent {
 
@@ -19,17 +18,9 @@ export class PlayerScores extends PureComponent {
 		);
 	};
 
-	renderMillColour = (player) => {
-		const fillColour = player.colour;
-		return (
-			<svg width="20" height="20" viewBox="-10,-10 20,20" >
-				<polygon points="0,0 0,-10 -10,-10" fill={fillColour} />
-				<polygon points="0,0 10,0 10,-10" fill={fillColour} />
-				<polygon points="0,0 0,10 10,10" fill={fillColour} />
-				<polygon points="0,0 -10,0 -10,10" fill={fillColour} />
-			</svg>
-		);
-	}
+	renderMillIndicator = (player) => (
+		<MillIndicator size={10} colour={player.colour} />
+	)
 
 	renderActivePlayerIndicator = (player) => {
 		const { activePlayerId } = this.props;
@@ -60,7 +51,7 @@ export class PlayerScores extends PureComponent {
 								{this.renderActivePlayerIndicator(player)}
 							</div>
 							<div className="player-mills" >
-								<div className="player-mill-colour" >{this.renderMillColour(player)}</div>
+								<div className="player-mill-colour" >{this.renderMillIndicator(player)}</div>
 								<div className="player-mill-count" >{player.millCount}</div>
 							</div>
 						</div>
