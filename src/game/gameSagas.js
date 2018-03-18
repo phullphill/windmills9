@@ -31,12 +31,10 @@ export function* aiPlayerActions(state, player) {
 	// determine which mill to target
 	const { bestMillId, bestMillerId } = nearestBestMillAndMiller(state);
 
-	// figure out which miller to move
+	// activate the best miller
 	let millerId = gameSelectors.player.activeMiller(state, playerId);
 	if (!millerId || millerId !== bestMillerId) {
 		millerId = bestMillerId;
-
-		// set it active
 		yield put(gameActions.setActiveMiller({ playerId, millerId }));
 	}
 

@@ -39846,28 +39846,80 @@ module.exports = function(originalModule) {
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.analyseMills = analyseMills;
+exports.rotateDistance = rotateDistance;
+exports.analyseMillSpins = analyseMillSpins;
 exports.findBestMill = findBestMill;
 exports.nearestBestMillAndMiller = nearestBestMillAndMiller;
 
 var _game = __webpack_require__(/*! game */ "./src/game/index.js");
 
-function analyseMills(state) {
-	var analysis = {};
-	var board = _game.gameSelectors.board.board(state);
+var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function rotateDistance(spin, quarter, vaneDirection) {
+	var _SPIN$CLOCKWISE, _SPIN$ANTICLOCKWISE, _desiredDirections;
+
+	var desiredDirections = (_desiredDirections = {}, _defineProperty(_desiredDirections, _common.SPIN.CLOCKWISE, (_SPIN$CLOCKWISE = {}, _defineProperty(_SPIN$CLOCKWISE, _common.COMPASS.NORTHEAST, _common.COMPASS.SOUTHEAST), _defineProperty(_SPIN$CLOCKWISE, _common.COMPASS.SOUTHEAST, _common.COMPASS.SOUTHWEST), _defineProperty(_SPIN$CLOCKWISE, _common.COMPASS.SOUTHWEST, _common.COMPASS.NORTHWEST), _defineProperty(_SPIN$CLOCKWISE, _common.COMPASS.NORTHWEST, _common.COMPASS.NORTHEAST), _SPIN$CLOCKWISE)), _defineProperty(_desiredDirections, _common.SPIN.ANTICLOCKWISE, (_SPIN$ANTICLOCKWISE = {}, _defineProperty(_SPIN$ANTICLOCKWISE, _common.COMPASS.NORTHEAST, _common.COMPASS.NORTHWEST), _defineProperty(_SPIN$ANTICLOCKWISE, _common.COMPASS.SOUTHEAST, _common.COMPASS.NORTHEAST), _defineProperty(_SPIN$ANTICLOCKWISE, _common.COMPASS.SOUTHWEST, _common.COMPASS.SOUTHEAST), _defineProperty(_SPIN$ANTICLOCKWISE, _common.COMPASS.NORTHWEST, _common.COMPASS.SOUTHWEST), _SPIN$ANTICLOCKWISE)), _desiredDirections);
+	var desiredDirection = desiredDirections[spin][vaneDirection];
+	if (vaneDirection === desiredDirection) {
+		return 0;
+	} else if (vaneDirection === _common.COMPASS.opposite(desiredDirection)) {
+		return 2;
+	}
+	return 1;
+}
+
+function analyseMillSpins(state) {
+	var _analysis;
+
+	var analysis = (_analysis = {}, _defineProperty(_analysis, _common.SPIN.CLOCKWISE, {
+		millScores: {},
+		bestMillScore: 99,
+		bestMill: null
+	}), _defineProperty(_analysis, _common.SPIN.ANTICLOCKWISE, {
+		millScores: {},
+		bestMillScore: 99,
+		bestMillId: null
+	}), _analysis);
+	var mills = _game.gameSelectors.mills.all(state);
+	mills.forEach(function (mill) {
+		var millScore = 0;
+		var millSpin = mill.spin;
+		var millVanes = _game.gameSelectors.mill.vanes(state, mill.id);
+		[_common.SPIN.CLOCKWISE, _common.SPIN.ANTICLOCKWISE].forEach(function (spin) {
+			_common.COMPASS.quarters.forEach(function (quarter) {
+				if (millSpin === _common.SPIN.NOSPIN) {
+					millScore += rotateDistance(spin, quarter, millVanes[quarter].direction);
+				}
+			});
+			analysis[spin].millScores[mill.id] = millScore;
+			if (millScore < analysis[spin].bestMillScore) {
+				analysis[spin].bestMillScore = millScore;
+				analysis[spin].bestMillId = mill.id;
+			}
+		});
+	});
 	return analysis;
 }
 
 function findBestMill(state) {
-	var bestMillId = '1.1';
-	var millAnalysis = analyseMills(state);
+	var bestMillScore = 99;
+	var bestMillId = null;
+
+	var millAnalysis = analyseMillSpins(state);
+	[_common.SPIN.CLOCKWISE, _common.SPIN.ANTICLOCKWISE].forEach(function (spin) {
+		if (millAnalysis[spin].bestMillScore < bestMillScore) {
+			bestMillScore = millAnalysis[spin].bestMillScore;
+			bestMillId = millAnalysis[spin].bestMillId;
+		}
+	});
 	return bestMillId;
 }
 
 function nearestBestMillAndMiller(state) {
-	var bestMillId = '1.1';
 	var bestMillerId = 'B-0';
-	var millAnalysis = analyseMills(state);
+	var bestMillId = findBestMill(state);
 	return { bestMillId: bestMillId, bestMillerId: bestMillerId };
 }
 
@@ -41077,7 +41129,7 @@ function aiPlayerActions(state, player) {
 
 					_nearestBestMillAndMi = (0, _ai.nearestBestMillAndMiller)(state), bestMillId = _nearestBestMillAndMi.bestMillId, bestMillerId = _nearestBestMillAndMi.bestMillerId;
 
-					// figure out which miller to move
+					// activate the best miller
 
 					millerId = _gameSelectors.gameSelectors.player.activeMiller(state, playerId);
 
@@ -41087,8 +41139,6 @@ function aiPlayerActions(state, player) {
 					}
 
 					millerId = bestMillerId;
-
-					// set it active
 					_context2.next = 7;
 					return (0, _effects.put)(_gameActions.gameActions.setActiveMiller({ playerId: playerId, millerId: millerId }));
 
