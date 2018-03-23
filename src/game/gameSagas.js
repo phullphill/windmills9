@@ -29,7 +29,7 @@ export function* aiPlayerActions(state, player) {
 	const playerId = player.id;
 
 	// determine which mill to target
-	const { bestMillId, bestMillerId } = nearestBestMillAndMiller(state);
+	const { bestMillId, bestMillerId } = nearestBestMillAndMiller(state, playerId);
 
 	// activate the best miller
 	let millerId = gameSelectors.player.activeMiller(state, playerId);
