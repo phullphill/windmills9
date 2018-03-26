@@ -1,6 +1,5 @@
 import { select, put, call, all } from 'redux-saga/effects';
-import { registerTakeEverySaga, COMPASS } from 'common';
-import { nearestBestMillAndMiller } from 'ai';
+import { registerTakeEverySaga } from 'common';
 import { gameActions } from './gameActions';
 import { gameSelectors } from './gameSelectors';
 
@@ -24,32 +23,6 @@ export function* accumulatePoints(state, allPlayers) {
 	}
 }
 
-export function* aiPlayerActions(state, player) {
-
-	const playerId = player.id;
-
-	// determine which mill to target
-	const { bestMillId, bestMillerId } = nearestBestMillAndMiller(state, playerId);
-
-	// activate the best miller
-	let millerId = gameSelectors.player.activeMiller(state, playerId);
-	if (!millerId || millerId !== bestMillerId) {
-		millerId = bestMillerId;
-		yield put(gameActions.setActiveMiller({ playerId, millerId }));
-	}
-
-	// decide where to move it to
-	const activeMiller = gameSelectors.miller.byId(state, playerId, millerId);
-	const fromPosition = activeMiller.position;
-	const board = gameSelectors.board.board(state);
-	const toDirection = COMPASS.random();
-	const toPosition = board.nextPositionFrom(fromPosition, toDirection);
-
-	// move it
-	yield put(gameActions.moveMiller({ playerId, millerId, toPosition }));
-
-}
-
 export function* nextPlayerHandler(action) {
 	const state = yield select();
 	const allPlayers = gameSelectors.players.all(state);
@@ -64,12 +37,6 @@ export function* nextPlayerHandler(action) {
 	const nextPlayerIndex = (activePlayerIndex + 1) % allPlayers.length;
 	const nextPlayer = allPlayers[nextPlayerIndex];
 	yield put(gameActions.setActivePlayer(nextPlayer.id));
-
-	// allow ai to play too
-	if (nextPlayer.isAI) {
-		yield call(aiPlayerActions, state, nextPlayer);
-		yield put(gameActions.nextPlayer.request());
-	}
 
 }
 registerTakeEverySaga(gameActions.nextPlayer, nextPlayerHandler);

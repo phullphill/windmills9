@@ -8,6 +8,7 @@ import { gameSelectors } from 'game';
 import { Board } from '../Board';
 import { Millers } from '../Millers';
 import { ControlBar } from '../ControlBar';
+import { AIOverlay } from '../AI';
 
 import './Game.less';
 
@@ -80,6 +81,10 @@ export const Game = connect(mapStateToProps)(class Game extends PureComponent {
 		<ControlBar />
 	);
 
+	renderAIOverlay = () => (
+		<AIOverlay />
+	);
+
 	render() {
 		const { hasError } = this.state;
 		if (hasError) {
@@ -91,6 +96,7 @@ export const Game = connect(mapStateToProps)(class Game extends PureComponent {
 				<div className="board-wrapper" style={this.renderBoardWrapperStyle()}>
 					{this.renderBoard()}
 					{this.renderMillers()}
+					{this.renderAIOverlay()}
 				</div>
 				{this.renderControlBar()}
 			</div>

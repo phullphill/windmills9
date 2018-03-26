@@ -85,9 +85,9 @@ function randomWindChange(state) {
 	if (swing !== 0) {
 		range(1, Math.abs(swing)).forEach(() => {
 			if (swing > 0) {
-				newDirection = newDirection.after();
+				newDirection = COMPASS.after(newDirection);
 			} else {
-				newDirection = newDirection.before();
+				newDirection = COMPASS.before(newDirection);
 			}
 		});
 	}

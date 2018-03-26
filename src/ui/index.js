@@ -1,3 +1,4 @@
+export * from './AI';
 export * from './Board';
 export * from './Common';
 export * from './ControlBar';
