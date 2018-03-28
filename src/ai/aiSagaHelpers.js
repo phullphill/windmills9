@@ -76,7 +76,6 @@ function analyseMillers(state, playerId, millScores) {
 	const freeMillers = millers.filter((miller) => !(gameSelectors.mill.at(state, miller.position).isSpinning()));
 	const mills = gameSelectors.mills.all(state);
 	mills.forEach((mill) => {
-
 		const millerDistances = freeMillers
 			.map((miller) => new MillerScore(miller.id, moveEstimate(miller.position, mill.position)))
 			.sort((a, b) => a.millerDistance - b.millerDistance);
@@ -85,16 +84,13 @@ function analyseMillers(state, playerId, millScores) {
 		const millerScores = new Immutable.List(relevantMillerScores);
 		millScores = millScores.setIn([mill.id, 'millerScores'], millerScores);
 	});
-	return millScores;
+	return millScores.sort((a, b) => a.totalScore - b.totalScore);
 }
 
 function nearestBestMillAndMiller(state, playerId) {
-
-	const millScores = analyseMillers(state, playerId, analyseMills(state))
-		.sort((a, b) => a.totalScore - b.totalScore);
-
+	const millScores = analyseMillers(state, playerId, analyseMills(state));
 	const bestMill = millScores.first();
-	const bestMiller = bestMill.millerScores.first();
+	const bestMiller = bestMill.millerScores.find((millerScores) => millerScores.millerDistance > 0);
 
 	return new Analysis(millScores, bestMill, bestMiller);
 }

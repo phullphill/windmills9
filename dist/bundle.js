@@ -39952,7 +39952,6 @@ function analyseMillers(state, playerId, millScores) {
 	});
 	var mills = _game.gameSelectors.mills.all(state);
 	mills.forEach(function (mill) {
-
 		var millerDistances = freeMillers.map(function (miller) {
 			return new _models.MillerScore(miller.id, moveEstimate(miller.position, mill.position));
 		}).sort(function (a, b) {
@@ -39963,17 +39962,17 @@ function analyseMillers(state, playerId, millScores) {
 		var millerScores = new _immutable2.default.List(relevantMillerScores);
 		millScores = millScores.setIn([mill.id, 'millerScores'], millerScores);
 	});
-	return millScores;
+	return millScores.sort(function (a, b) {
+		return a.totalScore - b.totalScore;
+	});
 }
 
 function nearestBestMillAndMiller(state, playerId) {
-
-	var millScores = analyseMillers(state, playerId, analyseMills(state)).sort(function (a, b) {
-		return a.totalScore - b.totalScore;
-	});
-
+	var millScores = analyseMillers(state, playerId, analyseMills(state));
 	var bestMill = millScores.first();
-	var bestMiller = bestMill.millerScores.first();
+	var bestMiller = bestMill.millerScores.find(function (millerScores) {
+		return millerScores.millerDistance > 0;
+	});
 
 	return new _models.Analysis(millScores, bestMill, bestMiller);
 }
