@@ -1,6 +1,5 @@
 import Immutable from 'immutable';
-import { COMPASS, transformObject } from 'common';
-import { determineMillSpin } from 'game';
+import { COMPASS, SPIN, BOARD_WIDTH, BOARD_HEIGHT, randomIntInclusive } from 'common';
 import { Mill } from './Mill';
 import { Position } from './Position';
 import { Vane } from './Vane';
@@ -9,63 +8,93 @@ function generateId(position) {
 	return `${position.x}.${position.y}`;
 }
 
-function wrapCoordinates(x, y, width, height) {
+function wrapCoordinates(x, y) {
 	return [
-		(x + width) % width,
-		(y + height) % height,
+		(x + BOARD_WIDTH) % BOARD_WIDTH,
+		(y + BOARD_HEIGHT) % BOARD_HEIGHT,
 	];
 }
 
-function vaneMillIds(vanePosition, width, height) {
+function vaneMillIds(vanePosition) {
 	const { x, y } = vanePosition;
-	return {
-		[COMPASS.NORTHWEST]: generateId(new Position(...wrapCoordinates(x, y, width, height))),
-		[COMPASS.NORTHEAST]: generateId(new Position(...wrapCoordinates(x + 1, y, width, height))),
-		[COMPASS.SOUTHEAST]: generateId(new Position(...wrapCoordinates(x + 1, y + 1, width, height))),
-		[COMPASS.SOUTHWEST]: generateId(new Position(...wrapCoordinates(x, y + 1, width, height))),
+	const millIds = {
+		[COMPASS.NORTHWEST]: generateId(new Position(...wrapCoordinates(x, y))),
+		[COMPASS.NORTHEAST]: generateId(new Position(...wrapCoordinates(x + 1, y))),
+		[COMPASS.SOUTHEAST]: generateId(new Position(...wrapCoordinates(x + 1, y + 1))),
+		[COMPASS.SOUTHWEST]: generateId(new Position(...wrapCoordinates(x, y + 1))),
 	};
+	return Immutable.Map(millIds);
 }
 
-function millVaneIds(millPosition, width, height) {
+function millVaneIds(millPosition) {
 	const { x, y } = millPosition;
-	return {
-		[COMPASS.NORTHWEST]: generateId(new Position(...wrapCoordinates(x - 1, y - 1, width, height))),
-		[COMPASS.NORTHEAST]: generateId(new Position(...wrapCoordinates(x, y - 1, width, height))),
-		[COMPASS.SOUTHEAST]: generateId(new Position(...wrapCoordinates(x, y, width, height))),
-		[COMPASS.SOUTHWEST]: generateId(new Position(...wrapCoordinates(x - 1, y, width, height))),
+	const vaneIds = {
+		[COMPASS.NORTHWEST]: generateId(new Position(...wrapCoordinates(x - 1, y - 1))),
+		[COMPASS.NORTHEAST]: generateId(new Position(...wrapCoordinates(x, y - 1))),
+		[COMPASS.SOUTHEAST]: generateId(new Position(...wrapCoordinates(x, y))),
+		[COMPASS.SOUTHWEST]: generateId(new Position(...wrapCoordinates(x - 1, y))),
 	};
+	return Immutable.Map(vaneIds);
+
 }
 
-function createVanes(width, height) {
+function createVanes() {
 	const vanes = {};
-	for (let y = 0; y < height; y++) {
-		for (let x = 0; x < width; x++) {
+	for (let y = 0; y < BOARD_HEIGHT; y++) {
+		for (let x = 0; x < BOARD_WIDTH; x++) {
 			const position = new Position(x, y);
 			const id = generateId(position);
 			const direction = COMPASS.randomQuarter();
-			const millIds = vaneMillIds(position, width, height);
+			const millIds = vaneMillIds(position);
 			vanes[id] = new Vane({ id, position, direction, millIds });
 		}
 	}
 	return Immutable.Map(vanes);
 }
 
-function createMills(width, height, vanes) {
+/**
+ * Determine if the vanes are aligned so the mill is spinning
+ * @param {array} vanes
+ * @return {enum} spin status of mill
+ */
+function determineMillSpin(vanes) {
+	let spin = SPIN.NOSPIN;
+	if (vanes[COMPASS.NORTHWEST].direction === COMPASS.NORTHEAST &&
+		vanes[COMPASS.NORTHEAST].direction === COMPASS.SOUTHEAST &&
+		vanes[COMPASS.SOUTHEAST].direction === COMPASS.SOUTHWEST &&
+		vanes[COMPASS.SOUTHWEST].direction === COMPASS.NORTHWEST) {
+		spin = SPIN.CLOCKWISE;
+	} else if (vanes[COMPASS.NORTHWEST].direction === COMPASS.SOUTHWEST &&
+		vanes[COMPASS.NORTHEAST].direction === COMPASS.NORTHWEST &&
+		vanes[COMPASS.SOUTHEAST].direction === COMPASS.NORTHEAST &&
+		vanes[COMPASS.SOUTHWEST].direction === COMPASS.SOUTHEAST) {
+		spin = SPIN.ANTICLOCKWISE;
+	}
+	return spin;
+}
+
+function createMills(vanes) {
 	const mills = {};
-	for (let y = 0; y < height; y++) {
-		for (let x = 0; x < width; x++) {
+	for (let y = 0; y < BOARD_HEIGHT; y++) {
+		for (let x = 0; x < BOARD_WIDTH; x++) {
 			const position = new Position(x, y);
 			const id = generateId(position);
-			const vaneIds = millVaneIds(position, width, height);
-			const millVanes = transformObject(vaneIds, COMPASS.quarters, (vaneId) => vanes.get(vaneId));
+			const vaneIds = millVaneIds(position);
+
+			const millVanes = {};
+			COMPASS.quarters.forEach((q) => {
+				millVanes[q] = vanes.get(vaneIds.get(q));
+			});
 			const spin = determineMillSpin(millVanes);
+
 			mills[id] = new Mill({ id, position, vaneIds, spin });
 		}
 	}
-	return Immutable.Map(mills);
+	const millsMap = Immutable.Map(mills);
+	return millsMap;
 }
 
-function positionFrom(position, toDirection, width, height) {
+function positionFrom(position, toDirection) {
 	const increments = {
 		[COMPASS.NORTH]: { x: 0, y: -1 },
 		[COMPASS.NORTHEAST]: { x: 1, y: -1 },
@@ -77,7 +106,7 @@ function positionFrom(position, toDirection, width, height) {
 		[COMPASS.NORTHWEST]: { x: -1, y: -1 },
 	};
 	const inc = increments[toDirection];
-	const newCoords = wrapCoordinates(position.x + inc.x, position.y + inc.y, width, height);
+	const newCoords = wrapCoordinates(position.x + inc.x, position.y + inc.y);
 	return new Position(...newCoords);
 }
 
@@ -93,10 +122,18 @@ export const BoardRecord = Immutable.Record({
 
 export class Board extends BoardRecord {
 
-	constructor({ id, width, height, portWidth, portHeight }) {
-		const vanes = createVanes(width, height);
-		const mills = createMills(width, height, vanes);
-		super({ id, width, height, portWidth, portHeight, vanes, mills });
+	constructor({ id, portWidth, portHeight }) {
+		const vanes = createVanes();
+		const mills = createMills(vanes);
+		super({ id, width: BOARD_WIDTH, height: BOARD_HEIGHT, portWidth, portHeight, vanes, mills });
+	}
+
+	static nextPositionFrom(position, toDirection) {
+		return positionFrom(position, toDirection);
+	}
+
+	static randomBoardPosition() {
+		return new Position(randomIntInclusive(0, BOARD_WIDTH - 1), randomIntInclusive(0, BOARD_HEIGHT - 1));
 	}
 
 	vaneById(vaneId) {
@@ -113,10 +150,6 @@ export class Board extends BoardRecord {
 
 	millAt(position) {
 		return this.millById(generateId(position));
-	}
-
-	nextPositionFrom(position, toDirection) {
-		return positionFrom(position, toDirection, this.width, this.height);
 	}
 
 	spinningMillCount() {

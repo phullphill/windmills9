@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 
 import { SQUARE_SIZE, COMPASS } from 'common';
 import { gameSelectors } from 'game';
-import { Icon } from 'ui';
+import { Icon } from '../common';
 
 function mapStateToProps(state) {
 	return {
@@ -16,7 +16,7 @@ function mapStateToProps(state) {
 export const WindStatus = connect(mapStateToProps)(class WindStatus extends PureComponent {
 
 	static propTypes = {
-		direction: PropTypes.symbol.isRequired,
+		direction: PropTypes.string.isRequired,
 		force: PropTypes.number.isRequired,
 	};
 

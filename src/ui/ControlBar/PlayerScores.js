@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import { Icon, MillIndicator } from 'ui';
+import { Icon, MillIndicator } from '../common';
 
 export class PlayerScores extends PureComponent {
 

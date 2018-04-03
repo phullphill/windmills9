@@ -1,5 +1,5 @@
 import Immutable from 'immutable';
-import { gameSelectors } from 'game';
+import { gameSelectors, shortestDistance } from 'game';
 import { COMPASS, SPIN } from 'common';
 import { MillScore, MillerScore, Analysis } from './models';
 
@@ -30,10 +30,10 @@ function rotateDistance(spin, quarter, vaneDirection) {
 	return 1;
 }
 
-function shortestDistance(delta, dimension) {
-	const abs = Math.abs(delta);
-	return abs <= (dimension / 2) ? delta : (dimension - abs) * Math.sign(-1 * delta);
-}
+// function shortestDistance(delta, dimension) {
+// 	const abs = Math.abs(delta);
+// 	return abs <= (dimension / 2) ? delta : (dimension - abs) * Math.sign(-1 * delta);
+// }
 
 function moveDelta(fromPosition, toPosition) {
 	const deltaX = shortestDistance(toPosition.x - fromPosition.x, BOARD_WIDTH);

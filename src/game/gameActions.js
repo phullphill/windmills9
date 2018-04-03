@@ -1,6 +1,14 @@
-import { createStoreAction, createSagaActions } from 'common';
+import { createStoreAction, createSagaActions } from 'common/reduxHelpers';
 
 export const gameActions = {
+
+	/**
+	 * Take a vane for a player. Involves moving 3 millers to the vane vertices.
+	 * @param {object} payload
+	 * @param {object} payload.playerId - player doing the selecting
+	 * @param {object} payload.vaneId - vane being selected
+	 */
+	takeVane: createSagaActions('TAKE_VANE'),
 
 	/**
 	 * Next active players

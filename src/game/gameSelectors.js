@@ -13,12 +13,19 @@ export const gameSelectors = {
 		byId: (state, vaneId) => gameSelectors.board.board(state).vanes.get(vaneId),
 		millIds: (state, vaneId) => gameSelectors.vane.byId(state, vaneId).millIds,
 		mills: (state, vaneId) => transformObject(gameSelectors.vane.millIds(state, vaneId), COMPASS.quarters, (millId) => gameSelectors.mill.byId(state, millId)),
-		apexPositions: (state, playerId, vaneId) => {
+		vertices: (state, playerId, vaneId) => {
 			const player = gameSelectors.player.byId(state, playerId);
 			const vane = gameSelectors.vane.byId(state, vaneId);
 			const vaneMills = gameSelectors.vane.mills(state, vaneId);
 			const vanePointDirections = COMPASS.quarters.filter((q) => q !== (player.colour === 'black' ? COMPASS.opposite(vane.direction) : vane.direction));
 			return vanePointDirections.map((d) => vaneMills[d].position);
+		},
+		apexPosition: (state, playerId, vaneId) => {
+			const player = gameSelectors.player.byId(state, playerId);
+			const vane = gameSelectors.vane.byId(state, vaneId);
+			const vaneMills = gameSelectors.vane.mills(state, vaneId);
+			const apexDirection = (player.colour === 'black' ? vane.direction : COMPASS.opposite(vane.direction));
+			return vaneMills[apexDirection].position;
 		},
 		oppositeApexPosition: (state, playerId, vaneId) => {
 			const player = gameSelectors.player.byId(state, playerId);
@@ -57,6 +64,7 @@ export const gameSelectors = {
 	player: {
 		byId: (state, playerId) => state.game.players.get(playerId),
 		millers: (state, playerId) => gameSelectors.player.byId(state, playerId).millers,
+		freeMillers: (state, playerId) => gameSelectors.player.millers(state, playerId).filter((miller) => !(gameSelectors.mill.at(state, miller.position).isSpinning())),
 		activeMillerId: (state, playerId) => gameSelectors.player.byId(state, playerId).activeMillerId,
 		activeMiller: (state, playerId) => {
 			const activeMillerId = gameSelectors.player.activeMillerId(state, playerId);

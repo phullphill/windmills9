@@ -1,15 +1,15 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import { SQUARE_SIZE, COMPASS } from 'common';
+import { COMPASS } from 'common';
 
 export class CompassPoint extends PureComponent {
 
 	static propTypes = {
-		direction: PropTypes.symbol.isRequired,
+		direction: PropTypes.string.isRequired,
 		size: PropTypes.number.isRequired,
 		isEnabled: PropTypes.bool.isRequired,
 		onSelect: PropTypes.func.isRequired,
-	}
+	};
 
 	handleClick = (e) => {
 		const { direction, isEnabled, onSelect } = this.props;

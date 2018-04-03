@@ -39901,14 +39901,14 @@ function rotateDistance(spin, quarter, vaneDirection) {
 	return 1;
 }
 
-function shortestDistance(delta, dimension) {
-	var abs = Math.abs(delta);
-	return abs <= dimension / 2 ? delta : (dimension - abs) * Math.sign(-1 * delta);
-}
+// function shortestDistance(delta, dimension) {
+// 	const abs = Math.abs(delta);
+// 	return abs <= (dimension / 2) ? delta : (dimension - abs) * Math.sign(-1 * delta);
+// }
 
 function moveDelta(fromPosition, toPosition) {
-	var deltaX = shortestDistance(toPosition.x - fromPosition.x, BOARD_WIDTH);
-	var deltaY = shortestDistance(toPosition.y - fromPosition.y, BOARD_HEIGHT);
+	var deltaX = (0, _game.shortestDistance)(toPosition.x - fromPosition.x, BOARD_WIDTH);
+	var deltaY = (0, _game.shortestDistance)(toPosition.y - fromPosition.y, BOARD_HEIGHT);
 	return { deltaX: deltaX, deltaY: deltaY };
 }
 
@@ -40547,14 +40547,18 @@ var CompassEnum = exports.CompassEnum = function (_CircularEnum) {
 	}
 
 	_createClass(CompassEnum, [{
-		key: 'before2',
-		value: function before2(sym) {
-			return this.before(this.before(sym));
+		key: 'isCardinal',
+		value: function isCardinal(sym) {
+			return this.cardinals.some(function (c) {
+				return c === sym;
+			});
 		}
 	}, {
-		key: 'after2',
-		value: function after2(sym) {
-			return this.after(this.after(sym));
+		key: 'isQuarter',
+		value: function isQuarter(sym) {
+			return this.quarters.some(function (q) {
+				return q === sym;
+			});
 		}
 	}, {
 		key: 'randomCardinal',
@@ -40567,6 +40571,16 @@ var CompassEnum = exports.CompassEnum = function (_CircularEnum) {
 		value: function randomQuarter() {
 			var randomIndex = Math.floor(Math.random() * this.quarters.length);
 			return this.quarters[randomIndex];
+		}
+	}, {
+		key: 'before2',
+		value: function before2(sym) {
+			return this.before(this.before(sym));
+		}
+	}, {
+		key: 'after2',
+		value: function after2(sym) {
+			return this.after(this.after(sym));
 		}
 	}, {
 		key: 'cardinals',
@@ -40599,6 +40613,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 var SQUARE_SIZE = exports.SQUARE_SIZE = 50;
+
+var BOARD_HEIGHT = exports.BOARD_HEIGHT = 8;
+var BOARD_WIDTH = exports.BOARD_WIDTH = 8;
 
 /***/ }),
 
@@ -40948,7 +40965,7 @@ var Enum = exports.Enum = function () {
 			for (var _iterator = keys[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 				var key = _step.value;
 
-				this[key] = Symbol(key);
+				this[key] = key; // Could use Symbol(key) here, but for ease of serialization we simply use the key;
 			}
 		} catch (err) {
 			_didIteratorError = true;
@@ -40964,9 +40981,6 @@ var Enum = exports.Enum = function () {
 				}
 			}
 		}
-
-		this._keys = keys;
-		Object.freeze(this);
 	}
 
 	_createClass(Enum, [{
@@ -40998,7 +41012,7 @@ var Enum = exports.Enum = function () {
 	}, {
 		key: "keys",
 		get: function get() {
-			return this._keys;
+			return Object.keys(this);
 		}
 	}, {
 		key: "symbols",
@@ -41130,7 +41144,7 @@ var _compassEnum = __webpack_require__(/*! ./compassEnum */ "./src/common/compas
 /**
  * @typedef {enum} compassDirection
  * A value that defines a compass direction, eg, for movement
- * It has symbols for 'NORTH', 'NORTHEAST', 'EAST', 'SOUTHEAST', 'SOUTH', 'SOUTHWEST', 'WEST', 'NORTHWEST'
+ * It has values for 'NORTH', 'NORTHEAST', 'EAST', 'SOUTHEAST', 'SOUTH', 'SOUTHWEST', 'WEST', 'NORTHWEST'
  * @readonly
  * @enum {string}
  * @public
@@ -41459,11 +41473,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.randomIntInclusive = randomIntInclusive;
 exports.range = range;
 exports.transformObject = transformObject;
-exports.randomBoardPosition = randomBoardPosition;
-
-var _game = __webpack_require__(/*! game */ "./src/game/index.js");
-
-var _models = __webpack_require__(/*! models */ "./src/models/index.js");
+exports.isEven = isEven;
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -41487,8 +41497,8 @@ function transformObject(obj, keys, transformer) {
 	return transformed;
 }
 
-function randomBoardPosition() {
-	return new _models.Position(randomIntInclusive(0, _game.gameConfig.board.width - 1), randomIntInclusive(0, _game.gameConfig.board.height - 1));
+function isEven(n) {
+	return Math.abs(n) % 2 === 0;
 }
 
 /***/ }),
@@ -41508,21 +41518,29 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.gameActions = undefined;
 
-var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+var _reduxHelpers = __webpack_require__(/*! common/reduxHelpers */ "./src/common/reduxHelpers.js");
 
 var gameActions = exports.gameActions = {
 
 	/**
+  * Take a vane for a player. Involves moving 3 millers to the vane vertices.
+  * @param {object} payload
+  * @param {object} payload.playerId - player doing the selecting
+  * @param {object} payload.vaneId - vane being selected
+  */
+	takeVane: (0, _reduxHelpers.createSagaActions)('TAKE_VANE'),
+
+	/**
   * Next active players
   */
-	nextPlayer: (0, _common.createSagaActions)('NEXT_PLAYER'),
+	nextPlayer: (0, _reduxHelpers.createSagaActions)('NEXT_PLAYER'),
 
 	/**
   * Set active player
   * @param {object} payload
   * @param {object} payload.playerId - player whose turn it is next
   */
-	setActivePlayer: (0, _common.createStoreAction)('SET_ACTIVE_PLAYER'),
+	setActivePlayer: (0, _reduxHelpers.createStoreAction)('SET_ACTIVE_PLAYER'),
 
 	/**
   * Set the active miller for a player
@@ -41530,7 +41548,7 @@ var gameActions = exports.gameActions = {
   * @param {object} payload.playerId - player doing the selecting
   * @param {object} payload.millerId - miller being selected
   */
-	setActiveMiller: (0, _common.createStoreAction)('SET_ACTIVE_MILLER'),
+	setActiveMiller: (0, _reduxHelpers.createStoreAction)('SET_ACTIVE_MILLER'),
 
 	/**
   * Move a miller to a new position
@@ -41539,7 +41557,7 @@ var gameActions = exports.gameActions = {
   * @param {string} payload.millerId - miller we want to move
   * @param {position} payload.toPosition - position to move the active miller to
   */
-	moveMiller: (0, _common.createStoreAction)('MOVE_MILLER'),
+	moveMiller: (0, _reduxHelpers.createStoreAction)('MOVE_MILLER'),
 
 	/**
   * Set the active vane for a player
@@ -41547,7 +41565,7 @@ var gameActions = exports.gameActions = {
   * @param {object} payload.playerId - player doing the selecting
   * @param {object} payload.vaneId - vane being selected
   */
-	setActiveVane: (0, _common.createStoreAction)('SET_ACTIVE_VANE'),
+	setActiveVane: (0, _reduxHelpers.createStoreAction)('SET_ACTIVE_VANE'),
 
 	/**
   * Rotate a vane one step clockwise or anti-cockwise.
@@ -41556,7 +41574,7 @@ var gameActions = exports.gameActions = {
   * @param {object} payload.vaneId - vane being rotated
   * @param {spinDirection} payload.spin - direction to rotate - clockwise or anti-clockwise
   */
-	rotateVane: (0, _common.createStoreAction)('ROTATE_VANE'),
+	rotateVane: (0, _reduxHelpers.createStoreAction)('ROTATE_VANE'),
 
 	/**
   * Adds some point to a miller.
@@ -41565,14 +41583,228 @@ var gameActions = exports.gameActions = {
   * @param {object} payload.millerId - id of miller gaining points
   * @param {object} payload.points - points to add
   */
-	addPoints: (0, _common.createStoreAction)('ADD_POINTS'),
+	addPoints: (0, _reduxHelpers.createStoreAction)('ADD_POINTS'),
 
 	/**
   * Change the wind randomly
   */
-	randomWindChange: (0, _common.createStoreAction)('RANDOM_WIND_CHANGE')
+	randomWindChange: (0, _reduxHelpers.createStoreAction)('RANDOM_WIND_CHANGE')
 
 };
+
+/***/ }),
+
+/***/ "./src/game/gameSagaHelpers.js":
+/*!*************************************!*\
+  !*** ./src/game/gameSagaHelpers.js ***!
+  \*************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.shortestDistance = shortestDistance;
+exports.moveDelta = moveDelta;
+exports.moveDirectionIsPossible = moveDirectionIsPossible;
+exports.positionIsFree = positionIsFree;
+exports.bestStepDirection = bestStepDirection;
+exports.alternateStepDirection = alternateStepDirection;
+exports.bestNextPosition = bestNextPosition;
+exports.takeStepTowards = takeStepTowards;
+exports.accumulatePoints = accumulatePoints;
+
+var _effects = __webpack_require__(/*! redux-saga/effects */ "./node_modules/redux-saga/es/effects.js");
+
+var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+
+var _gameActions = __webpack_require__(/*! ./gameActions */ "./src/game/gameActions.js");
+
+var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/gameSelectors.js");
+
+var _marked = /*#__PURE__*/regeneratorRuntime.mark(takeStepTowards),
+    _marked2 = /*#__PURE__*/regeneratorRuntime.mark(accumulatePoints);
+
+function shortestDistance(delta, maxDimension) {
+	var abs = Math.abs(delta);
+	return abs <= maxDimension / 2 ? delta : (maxDimension - abs) * Math.sign(-1 * delta);
+}
+
+function moveDelta(fromPosition, toPosition) {
+	var deltaX = shortestDistance(toPosition.x - fromPosition.x, _common.BOARD_WIDTH);
+	var deltaY = shortestDistance(toPosition.y - fromPosition.y, _common.BOARD_HEIGHT);
+	return { deltaX: deltaX, deltaY: deltaY };
+}
+
+function moveDirectionIsPossible(board, fromPosition, moveDirection) {
+	if (_common.COMPASS.cardinals.some(function (c) {
+		return c === moveDirection;
+	})) {
+		return true;
+	}
+	var mill = board.millAt(fromPosition);
+	var vaneId = mill.getIn(['vaneIds', moveDirection]);
+	var vane = board.vaneById(vaneId);
+	var vaneDirection = vane.direction;
+	return moveDirection === _common.COMPASS.after2(vaneDirection) || moveDirection === _common.COMPASS.before2(vaneDirection);
+}
+
+function positionIsFree(position, allMillers) {
+	return !allMillers.some(function (m) {
+		return m.isAt(position);
+	});
+}
+
+function bestStepDirection(deltaX, deltaY) {
+	var signDeltaX = Math.sign(deltaX);
+	var signDeltaY = Math.sign(deltaY);
+	var directionMap = {
+		'-1': {
+			'-1': _common.COMPASS.NORTHWEST,
+			'0': _common.COMPASS.WEST,
+			'1': _common.COMPASS.SOUTHWEST
+		},
+		'0': {
+			'-1': _common.COMPASS.NORTH,
+			'0': null,
+			'1': _common.COMPASS.SOUTH
+		},
+		'1': {
+			'-1': _common.COMPASS.NORTHEAST,
+			'0': _common.COMPASS.EAST,
+			'1': _common.COMPASS.SOUTHEAST
+		}
+	};
+	return directionMap[signDeltaX][signDeltaY];
+}
+
+function alternateStepDirection(deltaX, deltaY, idealDirection, triedDirections) {
+	var absDeltaX = Math.abs(deltaX);
+	var absDeltaY = Math.abs(deltaY);
+	var countTried = triedDirections.length;
+	if (countTried === 8) {
+		return null;
+	}
+	var prevTried = countTried <= 2 ? triedDirections[0] : triedDirections[countTried - 2];
+	if (absDeltaX > absDeltaY) {
+		return (0, _common.isEven)(countTried) ? _common.COMPASS.after(prevTried) : _common.COMPASS.before(prevTried);
+	} else {
+		return (0, _common.isEven)(countTried) ? _common.COMPASS.before(prevTried) : _common.COMPASS.after(prevTried);
+	}
+}
+
+function bestNextPosition(board, fromPosition, toPosition, allMillers) {
+	var _moveDelta = moveDelta(fromPosition, toPosition),
+	    deltaX = _moveDelta.deltaX,
+	    deltaY = _moveDelta.deltaY;
+
+	var idealDirection = bestStepDirection(deltaX, deltaY);
+	if (idealDirection === null) {
+		throw new Error('bestStepDirection given identical from ' + fromPosition + ' and target ' + toPosition + ' positions');
+	}
+	var bestDirection = idealDirection;
+	var nextPosition = board.nextPositionFrom(fromPosition, bestDirection);
+	var triedDirections = [];
+
+	// check ideal next position is possible
+	while (bestDirection !== null && (!moveDirectionIsPossible(board, fromPosition, bestDirection) || !positionIsFree(nextPosition, allMillers))) {
+		triedDirections.push(bestDirection);
+		bestDirection = alternateStepDirection(deltaX, deltaY, idealDirection, triedDirections);
+		nextPosition = bestDirection !== null ? board.nextPositionFrom(fromPosition, bestDirection) : null;
+	}
+
+	return nextPosition;
+}
+
+function takeStepTowards(playerId, millerId, apexPosition) {
+	var board, miller, allMillers, fromPosition, nextPosition;
+	return regeneratorRuntime.wrap(function takeStepTowards$(_context) {
+		while (1) {
+			switch (_context.prev = _context.next) {
+				case 0:
+					_context.next = 2;
+					return (0, _effects.select)(_gameSelectors.gameSelectors.board.board);
+
+				case 2:
+					board = _context.sent;
+					_context.next = 5;
+					return (0, _effects.select)(_gameSelectors.gameSelectors.miller.byId, playerId, millerId);
+
+				case 5:
+					miller = _context.sent;
+					_context.next = 8;
+					return (0, _effects.select)(_gameSelectors.gameSelectors.millers.all);
+
+				case 8:
+					allMillers = _context.sent;
+					fromPosition = miller.position;
+					nextPosition = bestNextPosition(board, fromPosition, apexPosition, allMillers);
+
+					if (!(nextPosition === null)) {
+						_context.next = 13;
+						break;
+					}
+
+					throw new Error('takeStepTowards can\'t determine next position for ' + millerId + ' at ' + fromPosition + ' towards ' + apexPosition);
+
+				case 13:
+					_context.next = 15;
+					return (0, _effects.put)(_gameActions.gameActions.moveMiller(playerId, millerId, nextPosition));
+
+				case 15:
+				case 'end':
+					return _context.stop();
+			}
+		}
+	}, _marked, this);
+}
+
+function accumulatePoints(state, allPlayers) {
+	var windForce, pointsActions;
+	return regeneratorRuntime.wrap(function accumulatePoints$(_context2) {
+		while (1) {
+			switch (_context2.prev = _context2.next) {
+				case 0:
+					windForce = _gameSelectors.gameSelectors.wind.force(state);
+
+					if (!(windForce === 0)) {
+						_context2.next = 3;
+						break;
+					}
+
+					return _context2.abrupt('return');
+
+				case 3:
+					pointsActions = [];
+
+					allPlayers.forEach(function (player) {
+						var millers = _gameSelectors.gameSelectors.player.millers(state, player.id);
+						millers.forEach(function (miller) {
+							var mill = _gameSelectors.gameSelectors.mill.at(state, miller.position);
+							if (mill.isSpinning()) {
+								pointsActions.push((0, _effects.put)(_gameActions.gameActions.addPoints({ playerId: player.id, millerId: miller.id, points: windForce })));
+							}
+						});
+					});
+
+					if (!(pointsActions.length > 0)) {
+						_context2.next = 8;
+						break;
+					}
+
+					_context2.next = 8;
+					return (0, _effects.all)(pointsActions);
+
+				case 8:
+				case 'end':
+					return _context2.stop();
+			}
+		}
+	}, _marked2, this);
+}
 
 /***/ }),
 
@@ -41589,8 +41821,8 @@ var gameActions = exports.gameActions = {
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.accumulatePoints = accumulatePoints;
 exports.nextPlayerHandler = nextPlayerHandler;
+exports.takeVaneHandler = takeVaneHandler;
 
 var _effects = __webpack_require__(/*! redux-saga/effects */ "./node_modules/redux-saga/es/effects.js");
 
@@ -41600,74 +41832,32 @@ var _gameActions = __webpack_require__(/*! ./gameActions */ "./src/game/gameActi
 
 var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/gameSelectors.js");
 
-var _marked = /*#__PURE__*/regeneratorRuntime.mark(accumulatePoints),
-    _marked2 = /*#__PURE__*/regeneratorRuntime.mark(nextPlayerHandler);
+var _gameSagaHelpers = __webpack_require__(/*! ./gameSagaHelpers */ "./src/game/gameSagaHelpers.js");
 
-function accumulatePoints(state, allPlayers) {
-	var windForce, pointsActions;
-	return regeneratorRuntime.wrap(function accumulatePoints$(_context) {
-		while (1) {
-			switch (_context.prev = _context.next) {
-				case 0:
-					windForce = _gameSelectors.gameSelectors.wind.force(state);
-
-					if (!(windForce === 0)) {
-						_context.next = 3;
-						break;
-					}
-
-					return _context.abrupt('return');
-
-				case 3:
-					pointsActions = [];
-
-					allPlayers.forEach(function (player) {
-						var millers = _gameSelectors.gameSelectors.player.millers(state, player.id);
-						millers.forEach(function (miller) {
-							var mill = _gameSelectors.gameSelectors.mill.at(state, miller.position);
-							if (mill.isSpinning()) {
-								pointsActions.push((0, _effects.put)(_gameActions.gameActions.addPoints({ playerId: player.id, millerId: miller.id, points: windForce })));
-							}
-						});
-					});
-
-					if (!(pointsActions.length > 0)) {
-						_context.next = 8;
-						break;
-					}
-
-					_context.next = 8;
-					return (0, _effects.all)(pointsActions);
-
-				case 8:
-				case 'end':
-					return _context.stop();
-			}
-		}
-	}, _marked, this);
-}
+var _marked = /*#__PURE__*/regeneratorRuntime.mark(nextPlayerHandler),
+    _marked2 = /*#__PURE__*/regeneratorRuntime.mark(takeVaneHandler);
 
 function nextPlayerHandler(action) {
 	var state, allPlayers, activePlayer, activePlayerIndex, nextPlayerIndex, nextPlayer;
-	return regeneratorRuntime.wrap(function nextPlayerHandler$(_context2) {
+	return regeneratorRuntime.wrap(function nextPlayerHandler$(_context) {
 		while (1) {
-			switch (_context2.prev = _context2.next) {
+			switch (_context.prev = _context.next) {
 				case 0:
-					_context2.next = 2;
+					_context.next = 2;
 					return (0, _effects.select)();
 
 				case 2:
-					state = _context2.sent;
+					state = _context.sent;
 					allPlayers = _gameSelectors.gameSelectors.players.all(state);
 					activePlayer = _gameSelectors.gameSelectors.players.active(state);
 
 					// everyone gets points and the wind changes
 
-					_context2.next = 7;
-					return (0, _effects.call)(accumulatePoints, state, allPlayers);
+					_context.next = 7;
+					return (0, _effects.call)(_gameSagaHelpers.accumulatePoints, state, allPlayers);
 
 				case 7:
-					_context2.next = 9;
+					_context.next = 9;
 					return (0, _effects.put)(_gameActions.gameActions.randomWindChange());
 
 				case 9:
@@ -41678,17 +41868,87 @@ function nextPlayerHandler(action) {
 					});
 					nextPlayerIndex = (activePlayerIndex + 1) % allPlayers.length;
 					nextPlayer = allPlayers[nextPlayerIndex];
-					_context2.next = 14;
+					_context.next = 14;
 					return (0, _effects.put)(_gameActions.gameActions.setActivePlayer(nextPlayer.id));
 
 				case 14:
+				case 'end':
+					return _context.stop();
+			}
+		}
+	}, _marked, this);
+}
+(0, _common.registerTakeEverySaga)(_gameActions.gameActions.nextPlayer, nextPlayerHandler);
+
+function takeVaneHandler(action) {
+	var _action$payload, playerId, vaneId, freeMillers, apexPosition, millerDistances, best;
+
+	return regeneratorRuntime.wrap(function takeVaneHandler$(_context2) {
+		while (1) {
+			switch (_context2.prev = _context2.next) {
+				case 0:
+					_action$payload = action.payload, playerId = _action$payload.playerId, vaneId = _action$payload.vaneId;
+
+					// set the vane as being active
+
+					_context2.next = 3;
+					return (0, _effects.put)(_gameActions.gameActions.setActiveVane(playerId, vaneId));
+
+				case 3:
+					_context2.next = 5;
+					return (0, _effects.select)(_gameSelectors.gameSelectors.player.freeMillers, playerId);
+
+				case 5:
+					freeMillers = _context2.sent;
+
+					if (!(freeMillers.length === 0)) {
+						_context2.next = 8;
+						break;
+					}
+
+					return _context2.abrupt('return');
+
+				case 8:
+					_context2.next = 10;
+					return (0, _effects.select)(_gameSelectors.gameSelectors.vane.apexPosition, playerId, vaneId);
+
+				case 10:
+					apexPosition = _context2.sent;
+					millerDistances = freeMillers.map(function (miller) {
+						return {
+							millerId: miller.id,
+							distance: (0, _gameSagaHelpers.distanceBetween)(miller.position, apexPosition)
+						};
+					}).sort(function (a, b) {
+						return a.distance - b.distance;
+					});
+
+					// select the closest
+
+					best = millerDistances[0];
+
+					// if not at apex take a step towards it
+
+					if (!(best.distance > 0)) {
+						_context2.next = 16;
+						break;
+					}
+
+					_context2.next = 16;
+					return (0, _effects.fork)(_gameSagaHelpers.takeStepTowards, playerId, best.millerId, apexPosition);
+
+				case 16:
+					_context2.next = 18;
+					return (0, _effects.put)(_gameActions.gameActions.nextPlayer());
+
+				case 18:
 				case 'end':
 					return _context2.stop();
 			}
 		}
 	}, _marked2, this);
 }
-(0, _common.registerTakeEverySaga)(_gameActions.gameActions.nextPlayer, nextPlayerHandler);
+(0, _common.registerTakeEverySaga)(_gameActions.gameActions.takeVane, takeVaneHandler);
 
 /***/ }),
 
@@ -41731,7 +41991,7 @@ var gameSelectors = exports.gameSelectors = {
 				return gameSelectors.mill.byId(state, millId);
 			});
 		},
-		apexPositions: function apexPositions(state, playerId, vaneId) {
+		vertices: function vertices(state, playerId, vaneId) {
 			var player = gameSelectors.player.byId(state, playerId);
 			var vane = gameSelectors.vane.byId(state, vaneId);
 			var vaneMills = gameSelectors.vane.mills(state, vaneId);
@@ -41741,6 +42001,13 @@ var gameSelectors = exports.gameSelectors = {
 			return vanePointDirections.map(function (d) {
 				return vaneMills[d].position;
 			});
+		},
+		apexPosition: function apexPosition(state, playerId, vaneId) {
+			var player = gameSelectors.player.byId(state, playerId);
+			var vane = gameSelectors.vane.byId(state, vaneId);
+			var vaneMills = gameSelectors.vane.mills(state, vaneId);
+			var apexDirection = player.colour === 'black' ? vane.direction : _common.COMPASS.opposite(vane.direction);
+			return vaneMills[apexDirection].position;
 		},
 		oppositeApexPosition: function oppositeApexPosition(state, playerId, vaneId) {
 			var player = gameSelectors.player.byId(state, playerId);
@@ -41800,6 +42067,11 @@ var gameSelectors = exports.gameSelectors = {
 		},
 		millers: function millers(state, playerId) {
 			return gameSelectors.player.byId(state, playerId).millers;
+		},
+		freeMillers: function freeMillers(state, playerId) {
+			return gameSelectors.player.millers(state, playerId).filter(function (miller) {
+				return !gameSelectors.mill.at(state, miller.position).isSpinning();
+			});
 		},
 		activeMillerId: function activeMillerId(state, playerId) {
 			return gameSelectors.player.byId(state, playerId).activeMillerId;
@@ -41891,10 +42163,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var gameConfig = exports.gameConfig = {
 	board: {
-		width: 8,
-		height: 8,
-		portWidth: 8,
-		portHeight: 8
+		width: _common.BOARD_WIDTH,
+		height: _common.BOARD_HEIGHT,
+		portWidth: _common.BOARD_WIDTH,
+		portHeight: _common.BOARD_HEIGHT
 	},
 	players: {
 		players: [{ id: 'A', name: 'Phill', colour: 'black', millerColour: 'blue', isAI: false }, { id: 'B', name: 'AI', colour: 'white', millerColour: 'green', isAI: true }],
@@ -41953,7 +42225,8 @@ function setActiveVane(state, _ref3) {
 	    vaneId = _ref3.vaneId;
 
 	var activeVaneId = state.getIn(['players', playerId, 'activeVaneId']);
-	if (vaneId === activeVaneId || !(0, _gameStoreHelpers.vaneIsRotateable)({ game: state }, playerId, vaneId)) {
+	// if (vaneId === activeVaneId || !vaneIsRotateable({ game: state }, playerId, vaneId)) {
+	if (vaneId === activeVaneId) {
 		return state;
 	}
 	return state.setIn(['players', playerId, 'activeVaneId'], vaneId);
@@ -42057,8 +42330,6 @@ exports.rotateVaneHelper = rotateVaneHelper;
 
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
-var _models = __webpack_require__(/*! models */ "./src/models/index.js");
-
 var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/gameSelectors.js");
 
 /**
@@ -42073,9 +42344,9 @@ var _gameSelectors = __webpack_require__(/*! ./gameSelectors */ "./src/game/game
 function vaneIsRotateable(state, playerId, vaneId) {
 
 	// check this player has a miller at each corner of the vane
-	var apexPositions = _gameSelectors.gameSelectors.vane.apexPositions(state, playerId, vaneId);
+	var vertices = _gameSelectors.gameSelectors.vane.vertices(state, playerId, vaneId);
 	var millers = _gameSelectors.gameSelectors.player.millers(state, playerId);
-	if (!apexPositions.every(function (p) {
+	if (!vertices.every(function (p) {
 		return millers.some(function (m) {
 			return m.isAt(p);
 		});
@@ -42121,7 +42392,7 @@ function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 	var vane = _gameSelectors.gameSelectors.vane.byId({ game: state }, vaneId);
 	var currentDirection = vane.direction;
 	var nextDirection = spinDirection === _common.SPIN.CLOCKWISE ? _common.COMPASS.after2(currentDirection) : _common.COMPASS.before2(currentDirection);
-	var oldApexPositions = _gameSelectors.gameSelectors.vane.apexPositions({ game: state }, playerId, vaneId);
+	var oldApexPositions = _gameSelectors.gameSelectors.vane.vertices({ game: state }, playerId, vaneId);
 	var oldSpinningMillCount = _gameSelectors.gameSelectors.player.spinningMillCount({ game: state }, playerId);
 
 	// rotate the vane
@@ -42131,7 +42402,7 @@ function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 	var apexMillers = oldApexPositions.map(function (p) {
 		return player.millerAt(p);
 	});
-	var newApexPositions = _gameSelectors.gameSelectors.vane.apexPositions({ game: state }, playerId, vaneId);
+	var newApexPositions = _gameSelectors.gameSelectors.vane.vertices({ game: state }, playerId, vaneId);
 	apexMillers.forEach(function (miller, index) {
 		state = state.setIn(['players', playerId, 'millers', miller.id, 'position'], newApexPositions[index]);
 	});
@@ -42153,35 +42424,27 @@ function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 	});
 
 	// if they've got more spinning mills after the rotate than before
-	if (_gameSelectors.gameSelectors.player.spinningMillCount({ game: state }, playerId) > oldSpinningMillCount) {
+	// if (gameSelectors.player.spinningMillCount({ game: state }, playerId) > oldSpinningMillCount) {
 
-		// deactivate the rotated vane
-		state = state.setIn(['players', playerId, 'activeVaneId'], null);
+	// 	// deactivate the rotated vane
+	// 	state = state.setIn(['players', playerId, 'activeVaneId'], null);
 
-		// give the player a new miller
-		var nMillers = player.millers.size;
-		var id = playerId + '-' + nMillers;
+	// 	// give the player a new miller
+	// 	const nMillers = player.millers.size;
+	// 	const id = `${playerId}-${nMillers}`;
 
-		var allMillers = players.reduce(function (all, p) {
-			return all.concat(p.millers.toArray());
-		}, []);
-		var allPositions = allMillers.map(function (m) {
-			return m.position;
-		});
-		var positionNotUnique = function positionNotUnique(positions, position) {
-			return positions.some(function (p) {
-				return p.isAt(position);
-			});
-		};
-		var position = void 0;
-		do {
-			position = (0, _common.randomBoardPosition)();
-		} while (positionNotUnique(allPositions, position));
+	// 	const allMillers = players.reduce((all, p) => all.concat(p.millers.toArray()), []);
+	// 	const allPositions = allMillers.map((m) => m.position);
+	// 	const positionNotUnique = (positions, position) => positions.some((p) => p.isAt(position));
+	// 	let position;
+	// 	do {
+	// 		position = randomBoardPosition(8, 8);
+	// 	} while (positionNotUnique(allPositions, position));
 
-		var points = 0;
-		var newMiller = new _models.Miller({ playerId: playerId, id: id, position: position, points: points });
-		state = state.setIn(['players', playerId, 'millers', id], newMiller);
-	}
+	// 	const points = 0;
+	// 	const newMiller = new Miller({ playerId, id, position, points });
+	// 	state = state.setIn(['players', playerId, 'millers', id], newMiller);
+	// }
 
 	return state.game;
 }
@@ -42210,6 +42473,18 @@ Object.keys(_gameActions).forEach(function (key) {
     enumerable: true,
     get: function get() {
       return _gameActions[key];
+    }
+  });
+});
+
+var _gameSagaHelpers = __webpack_require__(/*! ./gameSagaHelpers */ "./src/game/gameSagaHelpers.js");
+
+Object.keys(_gameSagaHelpers).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _gameSagaHelpers[key];
     }
   });
 });
@@ -42327,8 +42602,6 @@ var _immutable2 = _interopRequireDefault(_immutable);
 
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
-var _game = __webpack_require__(/*! game */ "./src/game/index.js");
-
 var _Mill = __webpack_require__(/*! ./Mill */ "./src/models/Mill.js");
 
 var _Position = __webpack_require__(/*! ./Position */ "./src/models/Position.js");
@@ -42351,65 +42624,90 @@ function generateId(position) {
 	return position.x + '.' + position.y;
 }
 
-function wrapCoordinates(x, y, width, height) {
-	return [(x + width) % width, (y + height) % height];
+function wrapCoordinates(x, y) {
+	return [(x + _common.BOARD_WIDTH) % _common.BOARD_WIDTH, (y + _common.BOARD_HEIGHT) % _common.BOARD_HEIGHT];
 }
 
-function vaneMillIds(vanePosition, width, height) {
-	var _ref;
+function vaneMillIds(vanePosition) {
+	var _millIds;
 
 	var x = vanePosition.x,
 	    y = vanePosition.y;
 
-	return _ref = {}, _defineProperty(_ref, _common.COMPASS.NORTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y, width, height)))))())), _defineProperty(_ref, _common.COMPASS.NORTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x + 1, y, width, height)))))())), _defineProperty(_ref, _common.COMPASS.SOUTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x + 1, y + 1, width, height)))))())), _defineProperty(_ref, _common.COMPASS.SOUTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y + 1, width, height)))))())), _ref;
+	var millIds = (_millIds = {}, _defineProperty(_millIds, _common.COMPASS.NORTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y)))))())), _defineProperty(_millIds, _common.COMPASS.NORTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x + 1, y)))))())), _defineProperty(_millIds, _common.COMPASS.SOUTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x + 1, y + 1)))))())), _defineProperty(_millIds, _common.COMPASS.SOUTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y + 1)))))())), _millIds);
+	return _immutable2.default.Map(millIds);
 }
 
-function millVaneIds(millPosition, width, height) {
-	var _ref2;
+function millVaneIds(millPosition) {
+	var _vaneIds;
 
 	var x = millPosition.x,
 	    y = millPosition.y;
 
-	return _ref2 = {}, _defineProperty(_ref2, _common.COMPASS.NORTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x - 1, y - 1, width, height)))))())), _defineProperty(_ref2, _common.COMPASS.NORTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y - 1, width, height)))))())), _defineProperty(_ref2, _common.COMPASS.SOUTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y, width, height)))))())), _defineProperty(_ref2, _common.COMPASS.SOUTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x - 1, y, width, height)))))())), _ref2;
+	var vaneIds = (_vaneIds = {}, _defineProperty(_vaneIds, _common.COMPASS.NORTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x - 1, y - 1)))))())), _defineProperty(_vaneIds, _common.COMPASS.NORTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y - 1)))))())), _defineProperty(_vaneIds, _common.COMPASS.SOUTHEAST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x, y)))))())), _defineProperty(_vaneIds, _common.COMPASS.SOUTHWEST, generateId(new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(wrapCoordinates(x - 1, y)))))())), _vaneIds);
+	return _immutable2.default.Map(vaneIds);
 }
 
-function createVanes(width, height) {
+function createVanes() {
 	var vanes = {};
-	for (var y = 0; y < height; y++) {
-		for (var x = 0; x < width; x++) {
+	for (var y = 0; y < _common.BOARD_HEIGHT; y++) {
+		for (var x = 0; x < _common.BOARD_WIDTH; x++) {
 			var position = new _Position.Position(x, y);
 			var id = generateId(position);
 			var direction = _common.COMPASS.randomQuarter();
-			var millIds = vaneMillIds(position, width, height);
+			var millIds = vaneMillIds(position);
 			vanes[id] = new _Vane.Vane({ id: id, position: position, direction: direction, millIds: millIds });
 		}
 	}
 	return _immutable2.default.Map(vanes);
 }
 
-function createMills(width, height, vanes) {
-	var mills = {};
-	for (var y = 0; y < height; y++) {
-		for (var x = 0; x < width; x++) {
-			var position = new _Position.Position(x, y);
-			var id = generateId(position);
-			var vaneIds = millVaneIds(position, width, height);
-			var millVanes = (0, _common.transformObject)(vaneIds, _common.COMPASS.quarters, function (vaneId) {
-				return vanes.get(vaneId);
-			});
-			var spin = (0, _game.determineMillSpin)(millVanes);
-			mills[id] = new _Mill.Mill({ id: id, position: position, vaneIds: vaneIds, spin: spin });
-		}
+/**
+ * Determine if the vanes are aligned so the mill is spinning
+ * @param {array} vanes
+ * @return {enum} spin status of mill
+ */
+function determineMillSpin(vanes) {
+	var spin = _common.SPIN.NOSPIN;
+	if (vanes[_common.COMPASS.NORTHWEST].direction === _common.COMPASS.NORTHEAST && vanes[_common.COMPASS.NORTHEAST].direction === _common.COMPASS.SOUTHEAST && vanes[_common.COMPASS.SOUTHEAST].direction === _common.COMPASS.SOUTHWEST && vanes[_common.COMPASS.SOUTHWEST].direction === _common.COMPASS.NORTHWEST) {
+		spin = _common.SPIN.CLOCKWISE;
+	} else if (vanes[_common.COMPASS.NORTHWEST].direction === _common.COMPASS.SOUTHWEST && vanes[_common.COMPASS.NORTHEAST].direction === _common.COMPASS.NORTHWEST && vanes[_common.COMPASS.SOUTHEAST].direction === _common.COMPASS.NORTHEAST && vanes[_common.COMPASS.SOUTHWEST].direction === _common.COMPASS.SOUTHEAST) {
+		spin = _common.SPIN.ANTICLOCKWISE;
 	}
-	return _immutable2.default.Map(mills);
+	return spin;
 }
 
-function positionFrom(position, toDirection, width, height) {
+function createMills(vanes) {
+	var mills = {};
+	for (var y = 0; y < _common.BOARD_HEIGHT; y++) {
+		var _loop = function _loop(x) {
+			var position = new _Position.Position(x, y);
+			var id = generateId(position);
+			var vaneIds = millVaneIds(position);
+
+			var millVanes = {};
+			_common.COMPASS.quarters.forEach(function (q) {
+				millVanes[q] = vanes.get(vaneIds.get(q));
+			});
+			var spin = determineMillSpin(millVanes);
+
+			mills[id] = new _Mill.Mill({ id: id, position: position, vaneIds: vaneIds, spin: spin });
+		};
+
+		for (var x = 0; x < _common.BOARD_WIDTH; x++) {
+			_loop(x);
+		}
+	}
+	var millsMap = _immutable2.default.Map(mills);
+	return millsMap;
+}
+
+function positionFrom(position, toDirection) {
 	var _increments;
 
 	var increments = (_increments = {}, _defineProperty(_increments, _common.COMPASS.NORTH, { x: 0, y: -1 }), _defineProperty(_increments, _common.COMPASS.NORTHEAST, { x: 1, y: -1 }), _defineProperty(_increments, _common.COMPASS.EAST, { x: 1, y: 0 }), _defineProperty(_increments, _common.COMPASS.SOUTHEAST, { x: 1, y: 1 }), _defineProperty(_increments, _common.COMPASS.SOUTH, { x: 0, y: 1 }), _defineProperty(_increments, _common.COMPASS.SOUTHWEST, { x: -1, y: 1 }), _defineProperty(_increments, _common.COMPASS.WEST, { x: -1, y: 0 }), _defineProperty(_increments, _common.COMPASS.NORTHWEST, { x: -1, y: -1 }), _increments);
 	var inc = increments[toDirection];
-	var newCoords = wrapCoordinates(position.x + inc.x, position.y + inc.y, width, height);
+	var newCoords = wrapCoordinates(position.x + inc.x, position.y + inc.y);
 	return new (Function.prototype.bind.apply(_Position.Position, [null].concat(_toConsumableArray(newCoords))))();
 }
 
@@ -42426,18 +42724,16 @@ var BoardRecord = exports.BoardRecord = _immutable2.default.Record({
 var Board = exports.Board = function (_BoardRecord) {
 	_inherits(Board, _BoardRecord);
 
-	function Board(_ref3) {
-		var id = _ref3.id,
-		    width = _ref3.width,
-		    height = _ref3.height,
-		    portWidth = _ref3.portWidth,
-		    portHeight = _ref3.portHeight;
+	function Board(_ref) {
+		var id = _ref.id,
+		    portWidth = _ref.portWidth,
+		    portHeight = _ref.portHeight;
 
 		_classCallCheck(this, Board);
 
-		var vanes = createVanes(width, height);
-		var mills = createMills(width, height, vanes);
-		return _possibleConstructorReturn(this, (Board.__proto__ || Object.getPrototypeOf(Board)).call(this, { id: id, width: width, height: height, portWidth: portWidth, portHeight: portHeight, vanes: vanes, mills: mills }));
+		var vanes = createVanes();
+		var mills = createMills(vanes);
+		return _possibleConstructorReturn(this, (Board.__proto__ || Object.getPrototypeOf(Board)).call(this, { id: id, width: _common.BOARD_WIDTH, height: _common.BOARD_HEIGHT, portWidth: portWidth, portHeight: portHeight, vanes: vanes, mills: mills }));
 	}
 
 	_createClass(Board, [{
@@ -42461,11 +42757,6 @@ var Board = exports.Board = function (_BoardRecord) {
 			return this.millById(generateId(position));
 		}
 	}, {
-		key: 'nextPositionFrom',
-		value: function nextPositionFrom(position, toDirection) {
-			return positionFrom(position, toDirection, this.width, this.height);
-		}
-	}, {
 		key: 'spinningMillCount',
 		value: function spinningMillCount() {
 			return this.spinningMills().length;
@@ -42483,6 +42774,16 @@ var Board = exports.Board = function (_BoardRecord) {
 				}
 			});
 			return spinningMills;
+		}
+	}], [{
+		key: 'nextPositionFrom',
+		value: function nextPositionFrom(position, toDirection) {
+			return positionFrom(position, toDirection);
+		}
+	}, {
+		key: 'randomBoardPosition',
+		value: function randomBoardPosition() {
+			return new _Position.Position((0, _common.randomIntInclusive)(0, _common.BOARD_WIDTH - 1), (0, _common.randomIntInclusive)(0, _common.BOARD_HEIGHT - 1));
 		}
 	}]);
 
@@ -42738,6 +43039,8 @@ var _Player = __webpack_require__(/*! ./Player */ "./src/models/Player.js");
 
 var _Miller = __webpack_require__(/*! ./Miller */ "./src/models/Miller.js");
 
+var _Board = __webpack_require__(/*! ./Board */ "./src/models/Board.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function uniquePositions(nGroups, nPerGroup) {
@@ -42753,7 +43056,7 @@ function uniquePositions(nGroups, nPerGroup) {
 		(0, _common.range)(0, nPerGroup - 1).forEach(function () {
 			var position = null;
 			do {
-				position = (0, _common.randomBoardPosition)();
+				position = _Board.Board.randomBoardPosition();
 			} while (positionNotUnique(allPositions, position));
 			allPositions.push(position);
 			groupPositions.push(position);
@@ -43694,400 +43997,6 @@ Object.keys(_Board).forEach(function (key) {
 
 /***/ }),
 
-/***/ "./src/ui/Common/Icon.js":
-/*!*******************************!*\
-  !*** ./src/ui/Common/Icon.js ***!
-  \*******************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.Icon = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-
-var _react2 = _interopRequireDefault(_react);
-
-var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _classnames = __webpack_require__(/*! classnames */ "./node_modules/classnames/index.js");
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-/**
- * Icon component.
- *
- * A pure react component that takes an icon name and renders an <span> element with appropriate classes.
- * If 'name' property starts with 'fa-' it renders a font awesome icon, otherwise a material design icon.
- * Usage: <Icon name='fa-pin' /> or <Icon name='menu' />
- *
- * @param {string} id unique id for the icon (optional)
- * @param {string} name Icon name
- * @param {string} className extra class(es) to add to icon classes (optional)
- * @param {function} onClick to call when icon is clicked (optional)
- * @param {string} color the icon colour
- * @param {number|string} width icon width - defaults to 'auto'
- * @param {number|string} height icon height - defaults to 'auto'
- */
-var Icon = exports.Icon = function (_PureComponent) {
-	_inherits(Icon, _PureComponent);
-
-	function Icon() {
-		var _ref;
-
-		var _temp, _this, _ret;
-
-		_classCallCheck(this, Icon);
-
-		for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-			args[_key] = arguments[_key];
-		}
-
-		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Icon.__proto__ || Object.getPrototypeOf(Icon)).call.apply(_ref, [this].concat(args))), _this), _this.hasOnClick = function () {
-			return typeof _this.props.onClick === 'function';
-		}, _this.isFontAwesomeIcon = function () {
-			return _this.props.name.startsWith('fa-');
-		}, _this.handleClick = function () {
-			var _this$props = _this.props,
-			    onClick = _this$props.onClick,
-			    isDisabled = _this$props.isDisabled;
-
-			if (!isDisabled) {
-				onClick();
-			}
-		}, _this.handleKeyPress = function () {}, _this.renderIconClasses = function () {
-			var _classNames;
-
-			var _this$props2 = _this.props,
-			    name = _this$props2.name,
-			    className = _this$props2.className,
-			    isDisabled = _this$props2.isDisabled;
-
-			var isfaIcon = _this.isFontAwesomeIcon();
-			return (0, _classnames2.default)('icon', className, (_classNames = {}, _defineProperty(_classNames, name, isfaIcon), _defineProperty(_classNames, 'fas', isfaIcon), _defineProperty(_classNames, 'material-icons', !isfaIcon), _defineProperty(_classNames, 'disabled', isDisabled), _classNames));
-		}, _this.renderIconStyle = function () {
-			var _this$props3 = _this.props,
-			    color = _this$props3.color,
-			    _this$props3$width = _this$props3.width,
-			    width = _this$props3$width === undefined ? 'auto' : _this$props3$width,
-			    _this$props3$height = _this$props3.height,
-			    height = _this$props3$height === undefined ? 'auto' : _this$props3$height,
-			    isDisabled = _this$props3.isDisabled;
-
-			var style = {
-				width: typeof width === 'number' ? width + 'px' : width,
-				height: typeof height === 'number' ? height + 'px' : height
-			};
-			if (_this.hasOnClick() && !isDisabled) {
-				style.cursor = 'pointer';
-			}
-			if (color) {
-				style.color = color;
-			}
-			return style;
-		}, _this.renderIconContent = function () {
-			if (_this.isFontAwesomeIcon()) {
-				return null;
-			}
-			return _this.props.name;
-		}, _temp), _possibleConstructorReturn(_this, _ret);
-	}
-
-	_createClass(Icon, [{
-		key: 'render',
-		value: function render() {
-			var id = this.props.id;
-
-			return _react2.default.createElement(
-				'span',
-				{
-					id: id,
-					className: this.renderIconClasses(),
-					style: this.renderIconStyle(),
-					onClick: this.handleClick,
-					onKeyPress: this.handleKeyPress
-				},
-				this.renderIconContent()
-			);
-		}
-	}]);
-
-	return Icon;
-}(_react.PureComponent);
-
-Icon.defaultProps = {
-	id: null,
-	className: '',
-	onClick: null,
-	color: null,
-	width: 'auto',
-	height: 'auto',
-	isDisabled: false
-};
-Icon.propTypes = {
-	id: _propTypes2.default.string,
-	name: _propTypes2.default.string.isRequired,
-	className: _propTypes2.default.string,
-	onClick: _propTypes2.default.func,
-	color: _propTypes2.default.string,
-	width: _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string]),
-	height: _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string]),
-	isDisabled: _propTypes2.default.bool
-};
-
-/***/ }),
-
-/***/ "./src/ui/Common/MillIndicator.js":
-/*!****************************************!*\
-  !*** ./src/ui/Common/MillIndicator.js ***!
-  \****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.MillIndicator = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-
-var _react2 = _interopRequireDefault(_react);
-
-var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _common = __webpack_require__(/*! common */ "./src/common/index.js");
-
-var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var MillIndicator = exports.MillIndicator = function (_PureComponent) {
-	_inherits(MillIndicator, _PureComponent);
-
-	function MillIndicator() {
-		_classCallCheck(this, MillIndicator);
-
-		return _possibleConstructorReturn(this, (MillIndicator.__proto__ || Object.getPrototypeOf(MillIndicator)).apply(this, arguments));
-	}
-
-	_createClass(MillIndicator, [{
-		key: 'render',
-		value: function render() {
-			var _props = this.props,
-			    className = _props.className,
-			    size = _props.size,
-			    colour = _props.colour,
-			    spin = _props.spin,
-			    style = _props.style;
-
-			var millSize = size * 2;
-			return _react2.default.createElement(
-				'svg',
-				{
-					className: className,
-					style: style,
-					width: millSize,
-					height: millSize,
-					viewBox: '-' + size + ',-' + size + ' ' + millSize + ',' + millSize
-				},
-				_common.COMPASS.quarters.map(function (q, index) {
-					return _react2.default.createElement(_ui.VaneIndicator, {
-						key: q.toString(),
-						size: size,
-						colour: colour,
-						direction: spin === _common.SPIN.CLOCKWISE ? _common.COMPASS.SOUTHWEST : _common.COMPASS.NORTHEAST,
-						transform: 'rotate(' + index * 90 + ' 0 0)'
-					});
-				})
-			);
-		}
-	}]);
-
-	return MillIndicator;
-}(_react.PureComponent);
-
-MillIndicator.defaultProps = {
-	className: '',
-	size: _common.SQUARE_SIZE,
-	colour: 'black',
-	spin: _common.SPIN.CLOCKWISE,
-	style: {}
-};
-MillIndicator.propTypes = {
-	className: _propTypes2.default.string,
-	size: _propTypes2.default.number,
-	colour: _propTypes2.default.string,
-	spin: _propTypes2.default.symbol,
-	style: _propTypes2.default.shape({})
-};
-
-/***/ }),
-
-/***/ "./src/ui/Common/VaneIndicator.js":
-/*!****************************************!*\
-  !*** ./src/ui/Common/VaneIndicator.js ***!
-  \****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.VaneIndicator = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-
-var _react2 = _interopRequireDefault(_react);
-
-var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _common = __webpack_require__(/*! common */ "./src/common/index.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var VaneIndicator = exports.VaneIndicator = function (_PureComponent) {
-	_inherits(VaneIndicator, _PureComponent);
-
-	function VaneIndicator() {
-		_classCallCheck(this, VaneIndicator);
-
-		return _possibleConstructorReturn(this, (VaneIndicator.__proto__ || Object.getPrototypeOf(VaneIndicator)).apply(this, arguments));
-	}
-
-	_createClass(VaneIndicator, [{
-		key: 'render',
-		value: function render() {
-			var _pointsMap;
-
-			var _props = this.props,
-			    size = _props.size,
-			    direction = _props.direction,
-			    colour = _props.colour,
-			    transform = _props.transform;
-
-			var pointsMap = (_pointsMap = {}, _defineProperty(_pointsMap, _common.COMPASS.NORTHWEST, '0,0 ' + size + ',0 0,' + size), _defineProperty(_pointsMap, _common.COMPASS.NORTHEAST, size + ',0 ' + size + ',' + size + ' 0,0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHEAST, size + ',' + size + ' 0,' + size + ' ' + size + ',0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHWEST, '0,' + size + ' 0,0 ' + size + ',' + size), _pointsMap);
-			var points = pointsMap[direction];
-			return _react2.default.createElement('polygon', { points: points, fill: colour, transform: transform });
-		}
-	}]);
-
-	return VaneIndicator;
-}(_react.PureComponent);
-
-VaneIndicator.defaultProps = {
-	size: _common.SQUARE_SIZE,
-	direction: _common.COMPASS.NORTHEAST,
-	colour: 'black',
-	transform: ''
-};
-VaneIndicator.propTypes = {
-	size: _propTypes2.default.number,
-	direction: _propTypes2.default.symbol,
-	colour: _propTypes2.default.string,
-	transform: _propTypes2.default.string
-};
-
-/***/ }),
-
-/***/ "./src/ui/Common/index.js":
-/*!********************************!*\
-  !*** ./src/ui/Common/index.js ***!
-  \********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _Icon = __webpack_require__(/*! ./Icon */ "./src/ui/Common/Icon.js");
-
-Object.keys(_Icon).forEach(function (key) {
-  if (key === "default" || key === "__esModule") return;
-  Object.defineProperty(exports, key, {
-    enumerable: true,
-    get: function get() {
-      return _Icon[key];
-    }
-  });
-});
-
-var _MillIndicator = __webpack_require__(/*! ./MillIndicator */ "./src/ui/Common/MillIndicator.js");
-
-Object.keys(_MillIndicator).forEach(function (key) {
-  if (key === "default" || key === "__esModule") return;
-  Object.defineProperty(exports, key, {
-    enumerable: true,
-    get: function get() {
-      return _MillIndicator[key];
-    }
-  });
-});
-
-var _VaneIndicator = __webpack_require__(/*! ./VaneIndicator */ "./src/ui/Common/VaneIndicator.js");
-
-Object.keys(_VaneIndicator).forEach(function (key) {
-  if (key === "default" || key === "__esModule") return;
-  Object.defineProperty(exports, key, {
-    enumerable: true,
-    get: function get() {
-      return _VaneIndicator[key];
-    }
-  });
-});
-
-/***/ }),
-
 /***/ "./src/ui/ControlBar/CompassPoint.js":
 /*!*******************************************!*\
   !*** ./src/ui/ControlBar/CompassPoint.js ***!
@@ -44177,7 +44086,7 @@ var CompassPoint = exports.CompassPoint = function (_PureComponent) {
 }(_react.PureComponent);
 
 CompassPoint.propTypes = {
-	direction: _propTypes2.default.symbol.isRequired,
+	direction: _propTypes2.default.string.isRequired,
 	size: _propTypes2.default.number.isRequired,
 	isEnabled: _propTypes2.default.bool.isRequired,
 	onSelect: _propTypes2.default.func.isRequired
@@ -44290,7 +44199,7 @@ var CompassRose = exports.CompassRose = function (_PureComponent) {
 }(_react.PureComponent);
 
 CompassRose.propTypes = {
-	disabledDirections: _propTypes2.default.arrayOf(_propTypes2.default.symbol).isRequired,
+	disabledDirections: _propTypes2.default.arrayOf(_propTypes2.default.string).isRequired,
 	onSelect: _propTypes2.default.func.isRequired
 };
 
@@ -44577,7 +44486,7 @@ var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-type
 
 var _propTypes2 = _interopRequireDefault(_propTypes);
 
-var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
+var _common = __webpack_require__(/*! ../common */ "./src/ui/common/index.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -44605,7 +44514,7 @@ var PlayerScores = exports.PlayerScores = function (_PureComponent) {
 			var style = { backgroundColor: player.millerColour };
 			return _react2.default.createElement('div', { className: 'miller', style: style });
 		}, _this.renderMillIndicator = function (player) {
-			return _react2.default.createElement(_ui.MillIndicator, { size: 10, colour: player.colour });
+			return _react2.default.createElement(_common.MillIndicator, { size: 10, colour: player.colour });
 		}, _this.renderActivePlayerIndicator = function (player) {
 			var activePlayerId = _this.props.activePlayerId;
 
@@ -44615,7 +44524,7 @@ var PlayerScores = exports.PlayerScores = function (_PureComponent) {
 			return _react2.default.createElement(
 				'div',
 				{ className: 'player-active-indicator' },
-				_react2.default.createElement(_ui.Icon, {
+				_react2.default.createElement(_common.Icon, {
 					name: 'fa-chevron-left',
 					width: 10,
 					height: 10
@@ -44720,7 +44629,7 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
-var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
+var _common2 = __webpack_require__(/*! ../common */ "./src/ui/common/index.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -44754,7 +44663,7 @@ var RotateButton = exports.RotateButton = function (_PureComponent) {
 			var id = spin === _common.SPIN.CLOCKWISE ? 'btn-cw' : 'btn-acw';
 			var name = spin === _common.SPIN.CLOCKWISE ? 'fa-redo-alt' : 'fa-undo-alt';
 			var iconSize = _common.SQUARE_SIZE * 0.6;
-			return _react2.default.createElement(_ui.Icon, {
+			return _react2.default.createElement(_common2.Icon, {
 				id: id,
 				name: name,
 				width: iconSize,
@@ -44795,13 +44704,13 @@ var RotateButton = exports.RotateButton = function (_PureComponent) {
 			return _react2.default.createElement(
 				'svg',
 				{ width: '' + size * 3, height: '' + size, viewBox: '0,0 ' + size * 3 + ',' + size },
-				_react2.default.createElement(_ui.VaneIndicator, {
+				_react2.default.createElement(_common2.VaneIndicator, {
 					size: size,
 					direction: directionNow,
 					colour: activePlayerColour
 				}),
 				_this.renderRightArrow('translate(' + size * 1 + ',0)'),
-				_react2.default.createElement(_ui.VaneIndicator, {
+				_react2.default.createElement(_common2.VaneIndicator, {
 					size: size,
 					direction: directionAfterRotate,
 					colour: activePlayerColour,
@@ -44832,7 +44741,7 @@ var RotateButton = exports.RotateButton = function (_PureComponent) {
 
 RotateButton.defaultProps = { activeVane: null };
 RotateButton.propTypes = {
-	spin: _propTypes2.default.symbol.isRequired,
+	spin: _propTypes2.default.string.isRequired,
 	onSelect: _propTypes2.default.func.isRequired,
 	activePlayerColour: _propTypes2.default.string.isRequired,
 	activeVane: _propTypes2.default.shape({})
@@ -44873,7 +44782,7 @@ var _common = __webpack_require__(/*! common */ "./src/common/index.js");
 
 var _game = __webpack_require__(/*! game */ "./src/game/index.js");
 
-var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
+var _common2 = __webpack_require__(/*! ../common */ "./src/ui/common/index.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -44933,7 +44842,7 @@ var WindStatus = exports.WindStatus = (0, _reactRedux.connect)(mapStateToProps)(
 		}, _this.renderWindArrow = function () {
 			var name = 'fa-arrow-up';
 			var iconSize = _common.SQUARE_SIZE * 0.5;
-			return _react2.default.createElement(_ui.Icon, {
+			return _react2.default.createElement(_common2.Icon, {
 				name: name,
 				width: iconSize,
 				height: iconSize
@@ -44992,7 +44901,7 @@ var WindStatus = exports.WindStatus = (0, _reactRedux.connect)(mapStateToProps)(
 
 	return WindStatus;
 }(_react.PureComponent), _class.propTypes = {
-	direction: _propTypes2.default.symbol.isRequired,
+	direction: _propTypes2.default.string.isRequired,
 	force: _propTypes2.default.number.isRequired
 }, _temp2));
 
@@ -45289,7 +45198,7 @@ var _models = __webpack_require__(/*! models */ "./src/models/index.js");
 
 var _game = __webpack_require__(/*! game */ "./src/game/index.js");
 
-var _ui = __webpack_require__(/*! ui */ "./src/ui/index.js");
+var _common2 = __webpack_require__(/*! ../common */ "./src/ui/common/index.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -45340,17 +45249,15 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 				actions.setActiveMiller(player.id, miller.id);
 			}
 		}, _this.handleKeyPress = function () {}, _this.wrapPositionAtEdges = function (position) {
-			var board = _this.props.board;
-
 			var positions = [position];
 			if (position.x === 0) {
-				positions.push(new _models.Position(board.width, position.y));
+				positions.push(new _models.Position(_common.BOARD_WIDTH, position.y));
 			}
 			if (position.y === 0) {
-				positions.push(new _models.Position(position.x, board.height));
+				positions.push(new _models.Position(position.x, _common.BOARD_HEIGHT));
 			}
 			if (position.x === 0 && position.y === 0) {
-				positions.push(new _models.Position(board.width, board.height));
+				positions.push(new _models.Position(_common.BOARD_WIDTH, _common.BOARD_HEIGHT));
 			}
 			return positions;
 		}, _this.renderMillerClasses = function () {
@@ -45367,9 +45274,7 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 				'is-milling': mill.isSpinning()
 			});
 		}, _this.renderMillerStyle = function (position) {
-			var _this$props3 = _this.props,
-			    player = _this$props3.player,
-			    mill = _this$props3.mill;
+			var player = _this.props.player;
 			var x = position.x,
 			    y = position.y;
 
@@ -45382,9 +45287,9 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 		}, _this.renderSpinVane = function (quarter) {
 			return _react2.default.createElement('path', null);
 		}, _this.renderMillingIndicator = function () {
-			var _this$props4 = _this.props,
-			    player = _this$props4.player,
-			    mill = _this$props4.mill;
+			var _this$props3 = _this.props,
+			    player = _this$props3.player,
+			    mill = _this$props3.mill;
 
 			if (!mill.isSpinning()) {
 				return null;
@@ -45408,7 +45313,7 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 				left: (x - 1) * size + 'px',
 				top: (y - 1) * size + 'px'
 			};
-			return _react2.default.createElement(_ui.MillIndicator, {
+			return _react2.default.createElement(_common2.MillIndicator, {
 				className: className,
 				style: style,
 				size: _common.SQUARE_SIZE,
@@ -45430,7 +45335,7 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 				{ id: miller.id, className: 'miller' },
 				this.wrapPositionAtEdges(miller.position).map(function (position) {
 					return _react2.default.createElement('div', {
-						key: miller.id + '-' + position,
+						key: miller.id + '-' + position.x + '.' + position.y,
 						className: _this2.renderMillerClasses(),
 						style: _this2.renderMillerStyle(position),
 						onClick: _this2.handleSelectMiller,
@@ -45443,13 +45348,14 @@ var Miller = exports.Miller = (0, _reactRedux.connect)(mapStateToProps, mapDispa
 	}]);
 
 	return Miller;
-}(_react.PureComponent), _class.propTypes = {
-	board: _propTypes2.default.shape({}).isRequired,
-	player: _propTypes2.default.shape({}).isRequired,
-	isActivePlayer: _propTypes2.default.bool.isRequired,
-	miller: _propTypes2.default.shape({}).isRequired,
-	mill: _propTypes2.default.shape({}).isRequired,
-	actions: _propTypes2.default.shape({}).isRequired
+}(_react.PureComponent), _class.propTypes = function () {
+	return {
+		player: _propTypes2.default.shape({}).isRequired,
+		isActivePlayer: _propTypes2.default.bool.isRequired,
+		miller: _propTypes2.default.shape({}).isRequired,
+		mill: _propTypes2.default.shape({}).isRequired,
+		actions: _propTypes2.default.shape({}).isRequired
+	};
 }, _temp2));
 
 /***/ }),
@@ -45536,7 +45442,6 @@ var Millers = exports.Millers = function (_PureComponent) {
 					return player.millers.toArray().map(function (miller) {
 						return _react2.default.createElement(_Miller.Miller, {
 							key: player.id + '_' + miller.id,
-							board: board,
 							player: player,
 							isActivePlayer: player.id === activePlayerId,
 							miller: miller
@@ -45616,6 +45521,400 @@ if(false) {}
 
 /***/ }),
 
+/***/ "./src/ui/common/Icon.js":
+/*!*******************************!*\
+  !*** ./src/ui/common/Icon.js ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.Icon = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _classnames = __webpack_require__(/*! classnames */ "./node_modules/classnames/index.js");
+
+var _classnames2 = _interopRequireDefault(_classnames);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+/**
+ * Icon component.
+ *
+ * A pure react component that takes an icon name and renders an <span> element with appropriate classes.
+ * If 'name' property starts with 'fa-' it renders a font awesome icon, otherwise a material design icon.
+ * Usage: <Icon name='fa-pin' /> or <Icon name='menu' />
+ *
+ * @param {string} id unique id for the icon (optional)
+ * @param {string} name Icon name
+ * @param {string} className extra class(es) to add to icon classes (optional)
+ * @param {function} onClick to call when icon is clicked (optional)
+ * @param {string} color the icon colour
+ * @param {number|string} width icon width - defaults to 'auto'
+ * @param {number|string} height icon height - defaults to 'auto'
+ */
+var Icon = exports.Icon = function (_PureComponent) {
+	_inherits(Icon, _PureComponent);
+
+	function Icon() {
+		var _ref;
+
+		var _temp, _this, _ret;
+
+		_classCallCheck(this, Icon);
+
+		for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+			args[_key] = arguments[_key];
+		}
+
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Icon.__proto__ || Object.getPrototypeOf(Icon)).call.apply(_ref, [this].concat(args))), _this), _this.hasOnClick = function () {
+			return typeof _this.props.onClick === 'function';
+		}, _this.isFontAwesomeIcon = function () {
+			return _this.props.name.startsWith('fa-');
+		}, _this.handleClick = function () {
+			var _this$props = _this.props,
+			    onClick = _this$props.onClick,
+			    isDisabled = _this$props.isDisabled;
+
+			if (!isDisabled) {
+				onClick();
+			}
+		}, _this.handleKeyPress = function () {}, _this.renderIconClasses = function () {
+			var _classNames;
+
+			var _this$props2 = _this.props,
+			    name = _this$props2.name,
+			    className = _this$props2.className,
+			    isDisabled = _this$props2.isDisabled;
+
+			var isfaIcon = _this.isFontAwesomeIcon();
+			return (0, _classnames2.default)('icon', className, (_classNames = {}, _defineProperty(_classNames, name, isfaIcon), _defineProperty(_classNames, 'fas', isfaIcon), _defineProperty(_classNames, 'material-icons', !isfaIcon), _defineProperty(_classNames, 'disabled', isDisabled), _classNames));
+		}, _this.renderIconStyle = function () {
+			var _this$props3 = _this.props,
+			    color = _this$props3.color,
+			    _this$props3$width = _this$props3.width,
+			    width = _this$props3$width === undefined ? 'auto' : _this$props3$width,
+			    _this$props3$height = _this$props3.height,
+			    height = _this$props3$height === undefined ? 'auto' : _this$props3$height,
+			    isDisabled = _this$props3.isDisabled;
+
+			var style = {
+				width: typeof width === 'number' ? width + 'px' : width,
+				height: typeof height === 'number' ? height + 'px' : height
+			};
+			if (_this.hasOnClick() && !isDisabled) {
+				style.cursor = 'pointer';
+			}
+			if (color) {
+				style.color = color;
+			}
+			return style;
+		}, _this.renderIconContent = function () {
+			if (_this.isFontAwesomeIcon()) {
+				return null;
+			}
+			return _this.props.name;
+		}, _temp), _possibleConstructorReturn(_this, _ret);
+	}
+
+	_createClass(Icon, [{
+		key: 'render',
+		value: function render() {
+			var id = this.props.id;
+
+			return _react2.default.createElement(
+				'span',
+				{
+					id: id,
+					className: this.renderIconClasses(),
+					style: this.renderIconStyle(),
+					onClick: this.handleClick,
+					onKeyPress: this.handleKeyPress
+				},
+				this.renderIconContent()
+			);
+		}
+	}]);
+
+	return Icon;
+}(_react.PureComponent);
+
+Icon.defaultProps = {
+	id: null,
+	className: '',
+	onClick: null,
+	color: null,
+	width: 'auto',
+	height: 'auto',
+	isDisabled: false
+};
+Icon.propTypes = {
+	id: _propTypes2.default.string,
+	name: _propTypes2.default.string.isRequired,
+	className: _propTypes2.default.string,
+	onClick: _propTypes2.default.func,
+	color: _propTypes2.default.string,
+	width: _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string]),
+	height: _propTypes2.default.oneOfType([_propTypes2.default.number, _propTypes2.default.string]),
+	isDisabled: _propTypes2.default.bool
+};
+
+/***/ }),
+
+/***/ "./src/ui/common/MillIndicator.js":
+/*!****************************************!*\
+  !*** ./src/ui/common/MillIndicator.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.MillIndicator = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+
+var _VaneIndicator = __webpack_require__(/*! ./VaneIndicator */ "./src/ui/common/VaneIndicator.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var MillIndicator = exports.MillIndicator = function (_PureComponent) {
+	_inherits(MillIndicator, _PureComponent);
+
+	function MillIndicator() {
+		_classCallCheck(this, MillIndicator);
+
+		return _possibleConstructorReturn(this, (MillIndicator.__proto__ || Object.getPrototypeOf(MillIndicator)).apply(this, arguments));
+	}
+
+	_createClass(MillIndicator, [{
+		key: 'render',
+		value: function render() {
+			var _props = this.props,
+			    className = _props.className,
+			    size = _props.size,
+			    colour = _props.colour,
+			    spin = _props.spin,
+			    style = _props.style;
+
+			var millSize = size * 2;
+			return _react2.default.createElement(
+				'svg',
+				{
+					className: className,
+					style: style,
+					width: millSize,
+					height: millSize,
+					viewBox: '-' + size + ',-' + size + ' ' + millSize + ',' + millSize
+				},
+				_common.COMPASS.quarters.map(function (q, index) {
+					return _react2.default.createElement(_VaneIndicator.VaneIndicator, {
+						key: q,
+						size: size,
+						colour: colour,
+						direction: spin === _common.SPIN.CLOCKWISE ? _common.COMPASS.SOUTHWEST : _common.COMPASS.NORTHEAST,
+						transform: 'rotate(' + index * 90 + ' 0 0)'
+					});
+				})
+			);
+		}
+	}]);
+
+	return MillIndicator;
+}(_react.PureComponent);
+
+MillIndicator.defaultProps = {
+	className: '',
+	size: _common.SQUARE_SIZE,
+	colour: 'black',
+	spin: _common.SPIN.CLOCKWISE,
+	style: {}
+};
+MillIndicator.propTypes = {
+	className: _propTypes2.default.string,
+	size: _propTypes2.default.number,
+	colour: _propTypes2.default.string,
+	spin: _propTypes2.default.string,
+	style: _propTypes2.default.shape({})
+};
+
+/***/ }),
+
+/***/ "./src/ui/common/VaneIndicator.js":
+/*!****************************************!*\
+  !*** ./src/ui/common/VaneIndicator.js ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.VaneIndicator = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _common = __webpack_require__(/*! common */ "./src/common/index.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var VaneIndicator = exports.VaneIndicator = function (_PureComponent) {
+	_inherits(VaneIndicator, _PureComponent);
+
+	function VaneIndicator() {
+		_classCallCheck(this, VaneIndicator);
+
+		return _possibleConstructorReturn(this, (VaneIndicator.__proto__ || Object.getPrototypeOf(VaneIndicator)).apply(this, arguments));
+	}
+
+	_createClass(VaneIndicator, [{
+		key: 'render',
+		value: function render() {
+			var _pointsMap;
+
+			var _props = this.props,
+			    size = _props.size,
+			    direction = _props.direction,
+			    colour = _props.colour,
+			    transform = _props.transform;
+
+			var pointsMap = (_pointsMap = {}, _defineProperty(_pointsMap, _common.COMPASS.NORTHWEST, '0,0 ' + size + ',0 0,' + size), _defineProperty(_pointsMap, _common.COMPASS.NORTHEAST, size + ',0 ' + size + ',' + size + ' 0,0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHEAST, size + ',' + size + ' 0,' + size + ' ' + size + ',0'), _defineProperty(_pointsMap, _common.COMPASS.SOUTHWEST, '0,' + size + ' 0,0 ' + size + ',' + size), _pointsMap);
+			var points = pointsMap[direction];
+			return _react2.default.createElement('polygon', { points: points, fill: colour, transform: transform });
+		}
+	}]);
+
+	return VaneIndicator;
+}(_react.PureComponent);
+
+VaneIndicator.defaultProps = {
+	size: _common.SQUARE_SIZE,
+	direction: _common.COMPASS.NORTHEAST,
+	colour: 'black',
+	transform: ''
+};
+VaneIndicator.propTypes = {
+	size: _propTypes2.default.number,
+	direction: _propTypes2.default.string,
+	colour: _propTypes2.default.string,
+	transform: _propTypes2.default.string
+};
+
+/***/ }),
+
+/***/ "./src/ui/common/index.js":
+/*!********************************!*\
+  !*** ./src/ui/common/index.js ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _Icon = __webpack_require__(/*! ./Icon */ "./src/ui/common/Icon.js");
+
+Object.keys(_Icon).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _Icon[key];
+    }
+  });
+});
+
+var _MillIndicator = __webpack_require__(/*! ./MillIndicator */ "./src/ui/common/MillIndicator.js");
+
+Object.keys(_MillIndicator).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _MillIndicator[key];
+    }
+  });
+});
+
+var _VaneIndicator = __webpack_require__(/*! ./VaneIndicator */ "./src/ui/common/VaneIndicator.js");
+
+Object.keys(_VaneIndicator).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _VaneIndicator[key];
+    }
+  });
+});
+
+/***/ }),
+
 /***/ "./src/ui/index.js":
 /*!*************************!*\
   !*** ./src/ui/index.js ***!
@@ -45650,18 +45949,6 @@ Object.keys(_Board).forEach(function (key) {
     enumerable: true,
     get: function get() {
       return _Board[key];
-    }
-  });
-});
-
-var _Common = __webpack_require__(/*! ./Common */ "./src/ui/Common/index.js");
-
-Object.keys(_Common).forEach(function (key) {
-  if (key === "default" || key === "__esModule") return;
-  Object.defineProperty(exports, key, {
-    enumerable: true,
-    get: function get() {
-      return _Common[key];
     }
   });
 });

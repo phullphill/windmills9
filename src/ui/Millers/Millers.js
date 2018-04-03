@@ -36,7 +36,6 @@ export class Millers extends PureComponent {
 			<div className="millers-wrapper" >
 				{players.map((player) => (player.millers.toArray().map((miller) => (<Miller
 					key={`${player.id}_${miller.id}`}
-					board={board}
 					player={player}
 					isActivePlayer={player.id === activePlayerId}
 					miller={miller}

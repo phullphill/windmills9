@@ -1,5 +1,3 @@
-import { gameConfig } from 'game';
-import { Position } from 'models';
 
 export function randomIntInclusive(min, max) {
 	min = Math.ceil(min);
@@ -19,6 +17,6 @@ export function transformObject(obj, keys, transformer) {
 	return transformed;
 }
 
-export function randomBoardPosition() {
-	return new Position(randomIntInclusive(0, gameConfig.board.width - 1), randomIntInclusive(0, gameConfig.board.height - 1));
+export function isEven(n) {
+	return (Math.abs(n) % 2) === 0;
 }

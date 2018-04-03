@@ -6,7 +6,7 @@ import { CompassPoint } from './CompassPoint';
 export class CompassRose extends PureComponent {
 
 	static propTypes = {
-		disabledDirections: PropTypes.arrayOf(PropTypes.symbol).isRequired,
+		disabledDirections: PropTypes.arrayOf(PropTypes.string).isRequired,
 		onSelect: PropTypes.func.isRequired,
 	}
 

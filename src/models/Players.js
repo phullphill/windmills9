@@ -1,7 +1,8 @@
 import Immutable from 'immutable';
-import { randomBoardPosition, range } from 'common';
+import { range } from 'common';
 import { Player } from './Player';
 import { Miller } from './Miller';
+import { Board } from './Board';
 
 function uniquePositions(nGroups, nPerGroup) {
 	let allPositions = [];
@@ -12,7 +13,7 @@ function uniquePositions(nGroups, nPerGroup) {
 		range(0, nPerGroup - 1).forEach(() => {
 			let position = null;
 			do {
-				position = randomBoardPosition();
+				position = Board.randomBoardPosition();
 			} while (positionNotUnique(allPositions, position));
 			allPositions.push(position);
 			groupPositions.push(position);

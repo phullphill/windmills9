@@ -1,27 +1,8 @@
-import { select, put, call, all } from 'redux-saga/effects';
+import { select, put, call, fork } from 'redux-saga/effects';
 import { registerTakeEverySaga } from 'common';
 import { gameActions } from './gameActions';
 import { gameSelectors } from './gameSelectors';
-
-export function* accumulatePoints(state, allPlayers) {
-	const windForce = gameSelectors.wind.force(state);
-	if (windForce === 0) {
-		return;
-	}
-	const pointsActions = [];
-	allPlayers.forEach((player) => {
-		const millers = gameSelectors.player.millers(state, player.id);
-		millers.forEach((miller) => {
-			const mill = gameSelectors.mill.at(state, miller.position);
-			if (mill.isSpinning()) {
-				pointsActions.push(put(gameActions.addPoints({ playerId: player.id, millerId: miller.id, points: windForce })));
-			}
-		});
-	});
-	if (pointsActions.length > 0) {
-		yield all(pointsActions);
-	}
-}
+import { accumulatePoints, distanceBetween, takeStepTowards } from './gameSagaHelpers';
 
 export function* nextPlayerHandler(action) {
 	const state = yield select();
@@ -40,3 +21,39 @@ export function* nextPlayerHandler(action) {
 
 }
 registerTakeEverySaga(gameActions.nextPlayer, nextPlayerHandler);
+
+export function* takeVaneHandler(action) {
+	const { playerId, vaneId } = action.payload;
+
+	// set the vane as being active
+	yield put(gameActions.setActiveVane(playerId, vaneId));
+
+	// determine the free millers (those not on a spinning mill)
+	const freeMillers = yield select(gameSelectors.player.freeMillers, playerId);
+
+	// check the player has at least 1 free miller
+	if (freeMillers.length === 0) {
+		return;
+	}
+
+	// analyse free miller distances to the apex of the vane, and sort them
+	const apexPosition = yield select(gameSelectors.vane.apexPosition, playerId, vaneId);
+	const millerDistances = freeMillers
+		.map((miller) => ({
+			millerId: miller.id,
+			distance: distanceBetween(miller.position, apexPosition),
+		}))
+		.sort((a, b) => a.distance - b.distance);
+
+	// select the closest
+	const best = millerDistances[0];
+
+	// if not at apex take a step towards it
+	if (best.distance > 0) {
+		yield fork(takeStepTowards, playerId, best.millerId, apexPosition);
+	}
+
+	// next player
+	yield put(gameActions.nextPlayer());
+}
+registerTakeEverySaga(gameActions.takeVane, takeVaneHandler);

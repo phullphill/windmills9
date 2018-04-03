@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { COMPASS, SPIN, SQUARE_SIZE } from 'common';
-import { VaneIndicator } from 'ui';
+import { VaneIndicator } from './VaneIndicator';
 
 export class MillIndicator extends PureComponent {
 
@@ -17,7 +17,7 @@ export class MillIndicator extends PureComponent {
 		className: PropTypes.string,
 		size: PropTypes.number,
 		colour: PropTypes.string,
-		spin: PropTypes.symbol,
+		spin: PropTypes.string,
 		style: PropTypes.shape({}),
 	}
 
@@ -34,7 +34,7 @@ export class MillIndicator extends PureComponent {
 			>
 				{COMPASS.quarters.map((q, index) => (
 					<VaneIndicator
-						key={q.toString()}
+						key={q}
 						size={size}
 						colour={colour}
 						direction={spin === SPIN.CLOCKWISE ? COMPASS.SOUTHWEST : COMPASS.NORTHEAST}

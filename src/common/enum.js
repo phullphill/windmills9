@@ -3,14 +3,12 @@ export class Enum {
 
 	constructor(...keys) {
 		for (const key of keys) {
-			this[key] = Symbol(key);
+			this[key] = key; // Could use Symbol(key) here, but for ease of serialization we simply use the key;
 		}
-		this._keys = keys;
-		Object.freeze(this);
 	}
 
 	get keys() {
-		return this._keys;
+		return Object.keys(this);
 	}
 
 	get symbols() {

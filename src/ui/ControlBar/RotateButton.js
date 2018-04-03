@@ -1,16 +1,14 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-
 import { SQUARE_SIZE, COMPASS, SPIN } from 'common';
-
-import { Icon, VaneIndicator } from 'ui';
+import { Icon, VaneIndicator } from '../common';
 
 export class RotateButton extends PureComponent {
 
 	static defaultProps = { activeVane: null };
 
 	static propTypes = {
-		spin: PropTypes.symbol.isRequired,
+		spin: PropTypes.string.isRequired,
 		onSelect: PropTypes.func.isRequired,
 		activePlayerColour: PropTypes.string.isRequired,
 		activeVane: PropTypes.shape({}),

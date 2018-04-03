@@ -13,7 +13,7 @@ export class VaneIndicator extends PureComponent {
 
 	static propTypes = {
 		size: PropTypes.number,
-		direction: PropTypes.symbol,
+		direction: PropTypes.string,
 		colour: PropTypes.string,
 		transform: PropTypes.string,
 	}

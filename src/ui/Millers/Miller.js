@@ -3,10 +3,10 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
-import { SQUARE_SIZE, SPIN } from 'common';
+import { SQUARE_SIZE, SPIN, BOARD_WIDTH, BOARD_HEIGHT } from 'common';
 import { Position } from 'models';
 import { gameActions, gameSelectors } from 'game';
-import { MillIndicator } from 'ui';
+import { MillIndicator } from '../common';
 
 function mapStateToProps(state, ownProps) {
 	return {
@@ -24,14 +24,13 @@ function mapDispatchToProps(dispatch) {
 
 export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller extends PureComponent {
 
-	static propTypes = {
-		board: PropTypes.shape({}).isRequired,
+	static propTypes = () => ({
 		player: PropTypes.shape({}).isRequired,
 		isActivePlayer: PropTypes.bool.isRequired,
 		miller: PropTypes.shape({}).isRequired,
 		mill: PropTypes.shape({}).isRequired,
 		actions: PropTypes.shape({}).isRequired,
-	};
+	});
 
 	handleSelectMiller = () => {
 		const { player, isActivePlayer, miller, actions } = this.props;
@@ -43,16 +42,15 @@ export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller 
 	handleKeyPress = () => { }
 
 	wrapPositionAtEdges = (position) => {
-		const { board } = this.props;
 		const positions = [position];
 		if (position.x === 0) {
-			positions.push(new Position(board.width, position.y));
+			positions.push(new Position(BOARD_WIDTH, position.y));
 		}
 		if (position.y === 0) {
-			positions.push(new Position(position.x, board.height));
+			positions.push(new Position(position.x, BOARD_HEIGHT));
 		}
 		if (position.x === 0 && position.y === 0) {
-			positions.push(new Position(board.width, board.height));
+			positions.push(new Position(BOARD_WIDTH, BOARD_HEIGHT));
 		}
 		return positions;
 	}
@@ -71,7 +69,7 @@ export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller 
 	}
 
 	renderMillerStyle = (position) => {
-		const { player, mill } = this.props;
+		const { player } = this.props;
 		const { x, y } = position;
 		const size = SQUARE_SIZE * 0.3;
 		return {
@@ -125,7 +123,7 @@ export const Miller = connect(mapStateToProps, mapDispatchToProps)(class Miller 
 			<div id={miller.id} className="miller" >
 				{this.wrapPositionAtEdges(miller.position).map((position) => (
 					<div
-						key={`${miller.id}-${position}`}
+						key={`${miller.id}-${position.x}.${position.y}`}
 						className={this.renderMillerClasses()}
 						style={this.renderMillerStyle(position)}
 						onClick={this.handleSelectMiller}

@@ -5,7 +5,7 @@ import { CompassEnum } from './compassEnum';
 /**
  * @typedef {enum} compassDirection
  * A value that defines a compass direction, eg, for movement
- * It has symbols for 'NORTH', 'NORTHEAST', 'EAST', 'SOUTHEAST', 'SOUTH', 'SOUTHWEST', 'WEST', 'NORTHWEST'
+ * It has values for 'NORTH', 'NORTHEAST', 'EAST', 'SOUTHEAST', 'SOUTH', 'SOUTHWEST', 'WEST', 'NORTHWEST'
  * @readonly
  * @enum {string}
  * @public

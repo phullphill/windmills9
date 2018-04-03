@@ -1,16 +1,16 @@
 
 import Immutable from 'immutable';
-import { COMPASS, registerReducers, range, randomIntInclusive } from 'common';
+import { COMPASS, registerReducers, range, randomIntInclusive, BOARD_WIDTH, BOARD_HEIGHT } from 'common';
 import { Board, createPlayers, Wind } from 'models';
 import { gameActions } from './gameActions';
-import { rotateVaneHelper, vaneIsRotateable } from './gameStoreHelpers';
+import { rotateVaneHelper } from './gameStoreHelpers';
 
 export const gameConfig = {
 	board: {
-		width: 8,
-		height: 8,
-		portWidth: 8,
-		portHeight: 8,
+		width: BOARD_WIDTH,
+		height: BOARD_HEIGHT,
+		portWidth: BOARD_WIDTH,
+		portHeight: BOARD_HEIGHT,
 	},
 	players: {
 		players: [
@@ -62,7 +62,8 @@ function moveMiller(state, { playerId, millerId, toPosition }) {
 
 function setActiveVane(state, { playerId, vaneId }) {
 	const activeVaneId = state.getIn(['players', playerId, 'activeVaneId']);
-	if (vaneId === activeVaneId || !vaneIsRotateable({ game: state }, playerId, vaneId)) {
+	// if (vaneId === activeVaneId || !vaneIsRotateable({ game: state }, playerId, vaneId)) {
+	if (vaneId === activeVaneId) {
 		return state;
 	}
 	return state.setIn(['players', playerId, 'activeVaneId'], vaneId);

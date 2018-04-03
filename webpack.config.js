@@ -3,7 +3,8 @@ const webpack = require('webpack');
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const WebpackNotifierPlugin = require('webpack-notifier');
- 
+const CircularDependencyPlugin = require('circular-dependency-plugin')
+
 module.exports = {
 
 	entry: [
@@ -40,12 +41,7 @@ module.exports = {
 				test: /\.js$/,
 				exclude: /node_modules/,
 				use: [
-					{
-						loader: 'babel-loader',
-						options: {
-							presets: ['es2015', 'stage-0', 'react'],
-						},
-					},
+					'babel-loader'
 				],
 			}
 		]
@@ -55,6 +51,11 @@ module.exports = {
 		new CleanWebpackPlugin('dist'),
 		new HtmlWebpackPlugin({ template: './src/index.html' }),
 		new WebpackNotifierPlugin(),
+		new CircularDependencyPlugin({
+			exclude: /node_modules/,
+			failOnError: true,
+			cwd: process.cwd(),
+		})
 	],
 
 };
