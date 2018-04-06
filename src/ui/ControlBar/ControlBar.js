@@ -5,6 +5,7 @@ import classNames from 'classnames';
 
 import { COMPASS, SPIN } from 'common';
 import { gameActions, gameSelectors } from 'game';
+import { nextPositionFrom } from 'models';
 
 import { WindStatus } from './WindStatus';
 import { PlayerScores } from './PlayerScores';
@@ -65,8 +66,8 @@ export const ControlBar = connect(mapStateToProps, mapDispatchToProps)(class Con
 	}
 
 	destinationIsEmpty = (position, direction) => {
-		const { board, players } = this.props;
-		const destination = board.nextPositionFrom(position, direction);
+		const { players } = this.props;
+		const destination = nextPositionFrom(position, direction);
 		const isEmpty = !players.some((player) => player.millerAt(destination) !== undefined);
 		return isEmpty;
 	}
@@ -74,7 +75,7 @@ export const ControlBar = connect(mapStateToProps, mapDispatchToProps)(class Con
 	diagonalMoveIsPossible = (position, direction) => {
 		const { board } = this.props;
 		const mill = board.millAt(position);
-		const vaneId = mill.vaneIds[direction];
+		const vaneId = mill.getIn(['vaneIds', direction]);
 		const vane = board.vaneById(vaneId);
 		if (vane.direction === direction || vane.direction === COMPASS.opposite(direction)) {
 			return false;
@@ -104,8 +105,8 @@ export const ControlBar = connect(mapStateToProps, mapDispatchToProps)(class Con
 	}
 
 	handleSelectDirection = (direction) => {
-		const { board, activePlayerId, activeMiller, actions } = this.props;
-		const toPosition = board.nextPositionFrom(activeMiller.position, direction);
+		const { activePlayerId, activeMiller, actions } = this.props;
+		const toPosition = nextPositionFrom(activeMiller.position, direction);
 		actions.moveMiller(activePlayerId, activeMiller.id, toPosition);
 		actions.nextPlayer();
 	}

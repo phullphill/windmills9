@@ -2,7 +2,7 @@ import { select, put, call, fork } from 'redux-saga/effects';
 import { registerTakeEverySaga } from 'common';
 import { gameActions } from './gameActions';
 import { gameSelectors } from './gameSelectors';
-import { accumulatePoints, distanceBetween, takeStepTowards } from './gameSagaHelpers';
+import { accumulatePoints, takeStepTowards } from './gameSagaHelpers';
 
 export function* nextPlayerHandler(action) {
 	const state = yield select();
@@ -23,7 +23,7 @@ export function* nextPlayerHandler(action) {
 registerTakeEverySaga(gameActions.nextPlayer, nextPlayerHandler);
 
 export function* takeVaneHandler(action) {
-	const { playerId, vaneId } = action.payload;
+	const { playerId, vaneId } = action.payload.request;
 
 	// set the vane as being active
 	yield put(gameActions.setActiveVane(playerId, vaneId));
@@ -41,12 +41,12 @@ export function* takeVaneHandler(action) {
 	const millerDistances = freeMillers
 		.map((miller) => ({
 			millerId: miller.id,
-			distance: distanceBetween(miller.position, apexPosition),
+			distance: 4, // needs sorting
 		}))
 		.sort((a, b) => a.distance - b.distance);
 
 	// select the closest
-	const best = millerDistances[0];
+	const best = millerDistances.first();
 
 	// if not at apex take a step towards it
 	if (best.distance > 0) {

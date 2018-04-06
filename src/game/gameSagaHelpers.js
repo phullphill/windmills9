@@ -1,5 +1,6 @@
 import { put, all, select } from 'redux-saga/effects';
 import { BOARD_WIDTH, BOARD_HEIGHT, COMPASS, isEven } from 'common';
+import { nextPositionFrom } from 'models';
 import { gameActions } from './gameActions';
 import { gameSelectors } from './gameSelectors';
 
@@ -74,14 +75,14 @@ export function bestNextPosition(board, fromPosition, toPosition, allMillers) {
 		throw new Error(`bestStepDirection given identical from ${fromPosition} and target ${toPosition} positions`);
 	}
 	let bestDirection = idealDirection;
-	let nextPosition = board.nextPositionFrom(fromPosition, bestDirection);
+	let nextPosition = nextPositionFrom(fromPosition, bestDirection);
 	const triedDirections = [];
 
 	// check ideal next position is possible
 	while (bestDirection !== null && (!moveDirectionIsPossible(board, fromPosition, bestDirection) || !positionIsFree(nextPosition, allMillers))) {
 		triedDirections.push(bestDirection);
 		bestDirection = alternateStepDirection(deltaX, deltaY, idealDirection, triedDirections);
-		nextPosition = bestDirection !== null ? board.nextPositionFrom(fromPosition, bestDirection) : null;
+		nextPosition = bestDirection !== null ? nextPositionFrom(fromPosition, bestDirection) : null;
 	}
 
 	return nextPosition;
@@ -90,7 +91,7 @@ export function bestNextPosition(board, fromPosition, toPosition, allMillers) {
 export function* takeStepTowards(playerId, millerId, apexPosition) {
 	const board = yield select(gameSelectors.board.board);
 	const miller = yield select(gameSelectors.miller.byId, playerId, millerId);
-	const allMillers = yield select(gameSelectors.millers.all);
+	const allMillers = yield select(gameSelectors.player.millers, playerId);
 	const fromPosition = miller.position;
 	const nextPosition = bestNextPosition(board, fromPosition, apexPosition, allMillers);
 	if (nextPosition === null) {

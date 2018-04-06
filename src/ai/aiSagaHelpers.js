@@ -1,6 +1,7 @@
 import Immutable from 'immutable';
 import { gameSelectors, shortestDistance } from 'game';
 import { COMPASS, SPIN } from 'common';
+import { nextPositionFrom } from 'models';
 import { MillScore, MillerScore, Analysis } from './models';
 
 const BOARD_WIDTH = 8;
@@ -116,7 +117,7 @@ export function bestMove(state, playerId) {
 	const toDirection = directionByDelta(deltaX, deltaY);
 
 	const board = gameSelectors.board.board(state);
-	const bestNextPosition = board.nextPositionFrom(fromPosition, toDirection);
+	const bestNextPosition = nextPositionFrom(fromPosition, toDirection);
 
 	return { bestMill, bestMiller, bestNextPosition };
 }

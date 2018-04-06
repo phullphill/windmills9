@@ -18,6 +18,7 @@ function mapDispatchToProps(dispatch) {
 	return {
 		actions: {
 			setActiveVane: (playerId, vaneId) => dispatch(gameActions.setActiveVane({ playerId, vaneId })),
+			takeVane: (playerId, vaneId) => dispatch(gameActions.takeVane.request({ playerId, vaneId })),
 		},
 	};
 }
@@ -43,6 +44,7 @@ export const Vane = connect(mapStateToProps, mapDispatchToProps)(class Vane exte
 			return;
 		}
 		actions.setActiveVane(activePlayerId, vane.id);
+		actions.takeVane(activePlayerId, vane.id);
 	}
 
 	renderWrapperClasses = () => {

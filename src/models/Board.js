@@ -94,7 +94,7 @@ function createMills(vanes) {
 	return millsMap;
 }
 
-function positionFrom(position, toDirection) {
+export function nextPositionFrom(position, toDirection) {
 	const increments = {
 		[COMPASS.NORTH]: { x: 0, y: -1 },
 		[COMPASS.NORTHEAST]: { x: 1, y: -1 },
@@ -126,10 +126,6 @@ export class Board extends BoardRecord {
 		const vanes = createVanes();
 		const mills = createMills(vanes);
 		super({ id, width: BOARD_WIDTH, height: BOARD_HEIGHT, portWidth, portHeight, vanes, mills });
-	}
-
-	static nextPositionFrom(position, toDirection) {
-		return positionFrom(position, toDirection);
 	}
 
 	static randomBoardPosition() {
