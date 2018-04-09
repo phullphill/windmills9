@@ -1,4 +1,5 @@
 import { COMPASS, SPIN } from 'common';
+import { Board, Miller } from 'models';
 import { gameSelectors } from './gameSelectors';
 
 /**
@@ -59,22 +60,19 @@ export function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 	const vane = gameSelectors.vane.byId({ game: state }, vaneId);
 	const currentDirection = vane.direction;
 	const nextDirection = spinDirection === SPIN.CLOCKWISE ? COMPASS.after2(currentDirection) : COMPASS.before2(currentDirection);
-	const oldApexPositions = gameSelectors.vane.vertices({ game: state }, playerId, vaneId);
+	const oldApexPosition = gameSelectors.vane.apexPosition({ game: state }, playerId, vaneId);
 	const oldSpinningMillCount = gameSelectors.player.spinningMillCount({ game: state }, playerId);
 
 	// rotate the vane
 	state.setIn(['board', 'vanes', vane.id, 'direction'], nextDirection);
 
-	// move the millers at vane corners
-	const apexMillers = oldApexPositions.map((p) => player.millerAt(p));
-	const newApexPositions = gameSelectors.vane.vertices({ game: state }, playerId, vaneId);
-	apexMillers.forEach((miller, index) => {
-		state = state.setIn(['players', playerId, 'millers', miller.id, 'position'], newApexPositions[index]);
-	});
+	// move the miller at vane apex
+	const apexMiller = player.millerAt(oldApexPosition);
+	const newApexPosition = gameSelectors.vane.apexPosition({ game: state }, playerId, vaneId);
+	state = state.setIn(['players', playerId, 'millers', apexMiller.id, 'position'], newApexPosition);
 
 	// check spin state of mills at the corners of the rotated vane
-	const millIds = COMPASS.quarters.map((k) => vane.millIds[k]);
-	millIds.forEach((id) => {
+	vane.millIds.toArray().forEach((id) => {
 		const millVanes = gameSelectors.mill.vanes({ game: state }, id);
 		const spin = determineMillSpin(millVanes);
 		state = state.setIn(['board', 'mills', id, 'spin'], spin);
@@ -87,27 +85,27 @@ export function rotateVaneHelper(state, playerId, vaneId, spinDirection) {
 	});
 
 	// if they've got more spinning mills after the rotate than before
-	// if (gameSelectors.player.spinningMillCount({ game: state }, playerId) > oldSpinningMillCount) {
+	if (gameSelectors.player.spinningMillCount({ game: state }, playerId) > oldSpinningMillCount) {
 
-	// 	// deactivate the rotated vane
-	// 	state = state.setIn(['players', playerId, 'activeVaneId'], null);
+		// deactivate the rotated vane
+		state = state.setIn(['players', playerId, 'activeVaneId'], null);
 
-	// 	// give the player a new miller
-	// 	const nMillers = player.millers.size;
-	// 	const id = `${playerId}-${nMillers}`;
+		// give the player a new miller
+		const nMillers = player.millers.size;
+		const id = `${playerId}-${nMillers}`;
 
-	// 	const allMillers = players.reduce((all, p) => all.concat(p.millers.toArray()), []);
-	// 	const allPositions = allMillers.map((m) => m.position);
-	// 	const positionNotUnique = (positions, position) => positions.some((p) => p.isAt(position));
-	// 	let position;
-	// 	do {
-	// 		position = randomBoardPosition(8, 8);
-	// 	} while (positionNotUnique(allPositions, position));
+		const allMillers = players.reduce((all, p) => all.concat(p.millers.toArray()), []);
+		const allPositions = allMillers.map((m) => m.position);
+		const positionNotUnique = (positions, position) => positions.some((p) => p.isAt(position));
+		let position;
+		do {
+			position = Board.randomBoardPosition();
+		} while (positionNotUnique(allPositions, position));
 
-	// 	const points = 0;
-	// 	const newMiller = new Miller({ playerId, id, position, points });
-	// 	state = state.setIn(['players', playerId, 'millers', id], newMiller);
-	// }
+		const points = 0;
+		const newMiller = new Miller({ playerId, id, position, points });
+		state = state.setIn(['players', playerId, 'millers', id], newMiller);
+	}
 
 	return state.game;
 }

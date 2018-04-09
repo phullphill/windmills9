@@ -1,4 +1,4 @@
-import { put, all, select } from 'redux-saga/effects';
+import { put, all, call, select } from 'redux-saga/effects';
 import { BOARD_WIDTH, BOARD_HEIGHT, COMPASS, isEven } from 'common';
 import { nextPositionFrom } from 'models';
 import { gameActions } from './gameActions';
@@ -91,13 +91,31 @@ export function bestNextPosition(board, fromPosition, toPosition, allMillers) {
 export function* takeStepTowards(playerId, millerId, apexPosition) {
 	const board = yield select(gameSelectors.board.board);
 	const miller = yield select(gameSelectors.miller.byId, playerId, millerId);
-	const allMillers = yield select(gameSelectors.player.millers, playerId);
 	const fromPosition = miller.position;
-	const nextPosition = bestNextPosition(board, fromPosition, apexPosition, allMillers);
-	if (nextPosition === null) {
+	const allMillers = yield select(gameSelectors.millers.all);
+	const toPosition = bestNextPosition(board, fromPosition, apexPosition, allMillers);
+	if (toPosition === null) {
 		throw new Error(`takeStepTowards can't determine next position for ${millerId} at ${fromPosition} towards ${apexPosition}`);
 	}
-	yield put(gameActions.moveMiller(playerId, millerId, nextPosition));
+	yield put(gameActions.moveMiller({ playerId, millerId, toPosition }));
+}
+
+export function* humanMakeBestMove(playerId) {
+	// get player's active vane
+	const activeVaneId = yield select(gameSelectors.player.activeVaneId, playerId);
+
+	// get apex position of the active vane
+	const apexPosition = yield select(gameSelectors.vane.apexPosition, playerId, activeVaneId);
+
+	// is there a miller at the apex
+	const allMillers = yield select(gameSelectors.millers.all);
+	const isApexEmpty = positionIsFree(apexPosition, allMillers);
+
+	// if empty then move nearest miller towards it
+	if (isApexEmpty) {
+		const millerId = nearestMiller();
+		yield call(takeStepTowards, playerId, millerId, apexPosition);
+	}
 }
 
 export function* accumulatePoints(state, allPlayers) {

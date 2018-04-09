@@ -61,6 +61,8 @@ export const gameSelectors = {
 
 	players: {
 		all: (state) => state.game.players.toArray(),
+		ai: (state) => gameSelectors.players.all(state).find((player) => player.isAi),
+		human: (state) => gameSelectors.players.all(state).find((player) => !player.isAi),
 		activeId: (state) => state.game.activePlayerId,
 		active: (state) => gameSelectors.player.byId(state, gameSelectors.players.activeId(state)),
 	},
@@ -69,7 +71,7 @@ export const gameSelectors = {
 		byId: (state, playerId) => state.game.players.get(playerId),
 		millers: (state, playerId) => {
 			const player = gameSelectors.player.byId(state, playerId);
-			return player.millers;
+			return player.millers.toArray();
 		},
 		freeMillers: (state, playerId) => gameSelectors.player.millers(state, playerId).filter((miller) => !(gameSelectors.mill.at(state, miller.position).isSpinning())),
 		activeMillerId: (state, playerId) => gameSelectors.player.byId(state, playerId).activeMillerId,
@@ -91,6 +93,14 @@ export const gameSelectors = {
 		},
 
 		points: (state, playerId) => gameSelectors.player.byId(state, playerId).points,
+	},
+
+	millers: {
+		all: (state) => {
+			const ai = gameSelectors.players.ai(state);
+			const human = gameSelectors.players.human(state);
+			return [...gameSelectors.player.millers(state, human.id), ...gameSelectors.player.millers(state, ai.id)];
+		},
 	},
 
 	miller: {

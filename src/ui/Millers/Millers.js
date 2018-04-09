@@ -8,7 +8,6 @@ import './millers.less';
 export class Millers extends PureComponent {
 
 	static propTypes = {
-		board: PropTypes.shape({}).isRequired,
 		players: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 		activePlayerId: PropTypes.string.isRequired,
 	};
@@ -31,16 +30,20 @@ export class Millers extends PureComponent {
 			return <span>Something went wrong</span>;
 		}
 
-		const { board, players, activePlayerId } = this.props;
+		const { players, activePlayerId } = this.props;
 		return (
 			<div className="millers-wrapper" >
-				{players.map((player) => (player.millers.toArray().map((miller) => (<Miller
-					key={`${player.id}_${miller.id}`}
-					player={player}
-					isActivePlayer={player.id === activePlayerId}
-					miller={miller}
-				/>
-				))))}
+				{players.map((player) => {
+					const millers = player.millers.toArray();
+					return (millers.map((miller) => (
+						<Miller
+							key={`${player.id}_${miller.id}`}
+							player={player}
+							isActivePlayer={player.id === activePlayerId}
+							miller={miller}
+						/>
+					)));
+				})}
 			</div>
 		);
 	}

@@ -24,17 +24,17 @@ export function* aiMakeBestMove(playerId) {
 
 }
 
-export function* aiPlay() {
+// export function* aiPlay() {
 
-	while (true) {
-		const action = yield take(gameActions.setActivePlayer.type);
-		const playerId = action.payload;
-		const player = yield select(gameSelectors.player.byId, playerId);
-		if (player.isAI) {
-			yield call(aiMakeBestMove, playerId);
-			yield put(gameActions.nextPlayer.request());
-		}
-	}
+// 	while (true) {
+// 		const action = yield take(gameActions.setActivePlayer.type);
+// 		const playerId = action.payload;
+// 		const player = yield select(gameSelectors.player.byId, playerId);
+// 		if (player.isAI) {
+// 			yield call(aiMakeBestMove, playerId);
+// 			yield put(gameActions.nextPlayer.request());
+// 		}
+// 	}
 
-}
-registerSagas([aiPlay]);
+// }
+// registerSagas([aiPlay]);

@@ -73,7 +73,7 @@ function analyseMills(state) {
 }
 
 function analyseMillers(state, playerId, millScores) {
-	const millers = gameSelectors.player.millers(state, playerId).toArray();
+	const millers = gameSelectors.player.millers(state, playerId);
 	const freeMillers = millers.filter((miller) => !(gameSelectors.mill.at(state, miller.position).isSpinning()));
 	const mills = gameSelectors.mills.all(state);
 	mills.forEach((mill) => {
@@ -105,8 +105,7 @@ function directionByDelta(deltaX, deltaY) {
 }
 
 export function bestMove(state, playerId) {
-	const analysis = nearestBestMillAndMiller(state, playerId);
-	const { bestMill, bestMiller } = analysis;
+	const { bestMill, bestMiller } = nearestBestMillAndMiller(state, playerId);
 
 	const miller = gameSelectors.miller.byId(state, playerId, bestMiller.millerId);
 	const fromPosition = miller.position;
@@ -115,8 +114,6 @@ export function bestMove(state, playerId) {
 
 	const { deltaX, deltaY } = moveDelta(fromPosition, toPosition);
 	const toDirection = directionByDelta(deltaX, deltaY);
-
-	const board = gameSelectors.board.board(state);
 	const bestNextPosition = nextPositionFrom(fromPosition, toDirection);
 
 	return { bestMill, bestMiller, bestNextPosition };

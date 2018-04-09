@@ -118,7 +118,12 @@ function createLoggerMiddleware() {
 	});
 }
 
-const sagaMiddleware = createSagaMiddleware();
+function createSagasMiddleware() {
+	registeredConfig.sagaMiddleware = createSagaMiddleware({
+		onError: (error) => console.log(`UNCAUGHT SAGA ERROR: ${error}`),
+	});
+	return registeredConfig.sagaMiddleware;
+}
 
 function registerMiddleware(...middlewares) {
 	registeredConfig.middleware.push(...middlewares);
@@ -127,7 +132,7 @@ function registerMiddleware(...middlewares) {
 function registerStandardMiddleware(env) {
 	registerMiddleware(
 		thunk,
-		sagaMiddleware,
+		createSagasMiddleware(),
 		(env === 'production' ? null : createLoggerMiddleware()),
 		ignoreActions(registeredConfig.ignorableActions),
 	);
@@ -139,6 +144,7 @@ function registerStandardMiddleware(env) {
  * @return {array} of forked sagas
  */
 function* composeRootSaga(sagas) {
+	console.log('forking all sagas');
 	yield all(sagas.map((saga) => fork(saga)));
 }
 
@@ -154,7 +160,7 @@ function* composeRootSaga(sagas) {
 export function createStoreAndMiddleware(env) {
 	const rootStore = combineReducers(registeredConfig.reducers);
 
-	// If no middleware has been provided, assume we wan't the default set
+	// If no middleware has been provided, assume we want the default set
 	if (registeredConfig.middleware.length === 0) {
 		registerStandardMiddleware(env);
 	}
@@ -162,7 +168,8 @@ export function createStoreAndMiddleware(env) {
 	const appliedMiddleware = compose(applyMiddleware(...registeredConfig.middleware));
 	const store = createStore(rootStore, appliedMiddleware);
 
-	sagaMiddleware.run(composeRootSaga, registeredConfig.sagas);
+	console.log('about to run sagaMiddleware ', registeredConfig.sagaMiddleware.run);
+	registeredConfig.sagaMiddleware.run(composeRootSaga, registeredConfig.sagas);
 
 	store.close = () => store.dispatch(END);
 	return store;
